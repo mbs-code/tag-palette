@@ -192,6 +192,11 @@ a.list-btn { color: inherit; text-decoration: none; }
 .share-prev { white-space: pre-line; color: var(--accent) !important; word-break: break-word; }
 .list-btn:disabled .share-prev { color: var(--sub) !important; }
 .foot-hint.warn-note { color: var(--danger); }
+/* 追加・編集画面の一番下：作成日・更新日 */
+.card-dates { display: flex; flex-wrap: wrap; gap: 2px 18px; margin: 8px 4px 2px; font-size: 12px; color: var(--sub); }
+.card-dates div { display: flex; gap: 6px; }
+.card-dates dt { font-weight: 700; }
+.card-dates dd { margin: 0; font-variant-numeric: tabular-nums; }
 .tw-tip { margin: 0 0 4px; }
 .tw-tip .tip-head { min-height: 28px; margin-bottom: 6px; }
 .tw-tip .tip-ico svg { width: 16px; height: 16px; }
@@ -220,7 +225,7 @@ main { padding: 8px 16px calc(env(safe-area-inset-bottom) + 96px); max-width: 64
   white-space: pre-wrap; word-break: break-word;
   align-self: center; }
 .row.pressing { background: var(--press); }
-.handle { flex: none; width: 48px; display: flex; align-items: center; justify-content: center;
+.handle { flex: none; width: 64px; display: flex; align-items: center; justify-content: center;
   color: var(--sub); font-size: 20px; touch-action: none; cursor: grab; }
 /* ドラッグ中：持ち上げた行は影付きで指に追従、他の行は滑らかによける */
 .row.dragging { z-index: 4; box-shadow: 0 10px 28px rgba(0,0,0,.35);
@@ -433,6 +438,9 @@ select.plain, .combo input {
       <button type="button" id="cardDelete" class="list-btn chev danger"><span class="ico ic" data-ic="trash"></span>
         <span class="lbl">このパレットを削除</span></button>
     </div>
+    <dl class="card-dates">
+      <div><dt>更新日</dt><dd id="cardUpdated"></dd></div>
+    </dl>
   </div>
   </div>
 </dialog>
@@ -608,11 +616,19 @@ select.plain, .combo input {
   const $ = (id) => document.getElementById(id);
 
   // ---------- 旧形式 → 新形式 ----------
+  // 作成日・更新日（ISO 形式の文字列）。正しい日時のときだけ残す
+  const validDate = (v) => (typeof v === 'string' && !isNaN(Date.parse(v))) ? v : undefined;
+  const dates = (p) => {
+    const o = {}, c = validDate(p.created), u = validDate(p.updated);
+    if (c) o.created = c;
+    if (u) o.updated = u;
+    return o;
+  };
   function toItem(p) {
     if (typeof p === 'string') return { text: p.replace(/\s+$/, ''), genre: '' };
     if (!p || typeof p !== 'object') return null;
     const genre = String(p.genre || '').trim();
-    if (typeof p.text === 'string' && p.tags == null) return { text: p.text.replace(/\s+$/, ''), genre };
+    if (typeof p.text === 'string' && p.tags == null) return { text: p.text.replace(/\s+$/, ''), genre, ...dates(p) };
     // 最初期の形式（表示名・タグ・先頭文）
     const tags = String(p.tags || '').split(/[\s,、　]+/)
       .map(t => t.replace(/^[#＃]+/, '').trim()).filter(Boolean).map(t => '#' + t).join(' ');
@@ -642,14 +658,15 @@ select.plain, .combo input {
                    settings: migrateSettings(o.settings) };
         }
         // 初回起動：サンプルを2件（どちらも未分類）入れておく
+        const now = new Date().toISOString();
         return { items: [
-          { id: uid(), text: '#アニメ名\n#実況', genre: '' },
-          { id: uid(), text: 'こんにちは～！今日もよろしくお願いします\n#実況', genre: '' }
+          { id: uid(), text: '#アニメ名\n#実況', genre: '', created: now, updated: now },
+          { id: uid(), text: 'こんにちは～！今日もよろしくお願いします\n#実況', genre: '', created: now, updated: now }
         ], settings: migrateSettings({}) };
       }
       const d = JSON.parse(raw);
       const items = (Array.isArray(d.items) ? d.items : [])
-        .map(i => ({ id: i.id || uid(), text: String(i.text || ''), genre: String(i.genre || '') }))
+        .map(i => ({ id: i.id || uid(), text: String(i.text || ''), genre: String(i.genre || ''), ...dates(i) }))
         .filter(i => i.text);
       return { items, settings: migrateSettings(d.settings) };
     } catch { return { items: [], settings: migrateSettings({}) }; }
@@ -1007,6 +1024,27 @@ select.plain, .combo input {
     d.addEventListener('cancel', (e) => { e.preventDefault(); closeDlg(d); });
   }
 
+  // 「2026/11/21(土) 14:03:25・3時間前」の形。記録が無い（以前に作ったパレット）ときは「記録なし」
+  function fmtDate(iso) {
+    if (!iso) return '記録なし';
+    const d = new Date(iso), p = (n) => String(n).padStart(2, '0');
+    const wd = '日月火水木金土'[d.getDay()];
+    return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())}(${wd}) ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}・${ago(d)}`;
+  }
+  // どれくらい前か（n秒前 / n分前 / n時間前 / n日前 / nか月前 / n年前）
+  function ago(d) {
+    const sec = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+    if (sec < 60) return `${sec}秒前`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min}分前`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `${h}時間前`;
+    const day = Math.floor(h / 24);
+    if (day < 30) return `${day}日前`;
+    if (day < 365) return `${Math.floor(day / 30)}か月前`;
+    return `${Math.floor(day / 365)}年前`;
+  }
+
   // ---------- 追加・編集ダイアログ ----------
   let editingIndex = -1;
   function openEditor(i = -1) {
@@ -1020,6 +1058,7 @@ select.plain, .combo input {
     $('fGenre').value = item ? item.genre : (g === ALL ? '' : g);
     $('fErr').textContent = '';
     $('cardExtra').hidden = !item;
+    $('cardUpdated').textContent = fmtDate(item && item.updated);
     closeMenu();
     openDlg($('cardDlg'));
     updatePreview();
@@ -1118,8 +1157,12 @@ select.plain, .combo input {
     const text = raw.trim() ? raw : '';
     const genre = $('fGenre').value.trim();
     if (!text) { $('fErr').textContent = '本文を入力してください'; $('fText').focus(); return; }
-    if (editingIndex >= 0) Object.assign(state.items[editingIndex], { text, genre });
-    else state.items.push({ id: uid(), text, genre });
+    const now = new Date().toISOString();
+    if (editingIndex >= 0) {
+      // 本文かグループが変わったときだけ更新日を新しくする
+      const it = state.items[editingIndex];
+      if (it.text !== text || it.genre !== genre) Object.assign(it, { text, genre, updated: now });
+    } else state.items.push({ id: uid(), text, genre, created: now, updated: now });
     // 別のグループで保存したら、行が消えたように見えないよう表示を切り替える
     const g = currentGenre();
     if (g !== ALL && g !== genre) state.settings.genre = genre;

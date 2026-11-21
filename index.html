@@ -1334,11 +1334,12 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   $('defaultGenre').addEventListener('change', (e) => setGenre(e.target.value));
 
   // ---------- エクスポート ----------
+  // 保存しているものを丸ごと書き出す（本文・グループ・作成日・更新日・最終利用日・利用回数・有効/無効・設定すべて）
   function exportJSON() {
     const { genre, ...settings } = state.settings;
     return JSON.stringify({
-      app: 'tag-palette', appVersion, version: 3, exportedAt: new Date().toISOString(),
-      items: state.items.map(i => i.genre ? { text: i.text, genre: i.genre } : { text: i.text }),
+      app: 'tag-palette', appVersion, version: 4, exportedAt: new Date().toISOString(),
+      items: state.items.map(({ id, ...rest }) => rest),
       settings: { ...settings, genre: genre === ALL ? null : genre }
     }, null, 2);
   }

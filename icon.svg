@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#1d9bf0"/>
+  <!-- パレット：右下の切り欠き＋親指の穴で、ひと目でパレットと分かる形に -->
+  <mask id="m">
+    <rect width="512" height="512" fill="#fff"/>
+    <circle cx="450" cy="330" r="62" fill="#000"/>
+    <circle cx="345" cy="365" r="34" fill="#000"/>
+  </mask>
+  <ellipse cx="256" cy="256" rx="210" ry="190" fill="#ffffff" mask="url(#m)"/>
+  <!-- 絵の具 -->
+  <circle cx="150" cy="170" r="36" fill="#f4212e"/>
+  <circle cx="250" cy="128" r="36" fill="#ffc400"/>
+  <circle cx="350" cy="150" r="36" fill="#00ba7c"/>
+  <!-- # -->
+  <g stroke="#1d9bf0" stroke-width="38" stroke-linecap="round">
+    <line x1="190" y1="220" x2="172" y2="388"/>
+    <line x1="252" y1="220" x2="234" y2="388"/>
+    <line x1="130" y1="276" x2="300" y2="276"/>
+    <line x1="122" y1="334" x2="292" y2="334"/>
+  </g>
+</svg>

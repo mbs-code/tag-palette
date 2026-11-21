@@ -1,0 +1,1223 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>タグパレット</title>
+<meta name="theme-color" content="#1d9bf0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="タグパレット">
+<script>
+  // 保存済みのテーマ（ライト/ダーク）を描画前に適用して、ちらつきを防ぐ
+  try {
+    const t = (JSON.parse(localStorage.getItem('teikei-post.v2') || '{}').settings || {}).theme;
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+<script src="version.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root {
+  --bg: #f2f4f7; --card: #ffffff; --text: #0f1419; --sub: #536471;
+  --line: #e1e6ea; --accent: #1d9bf0; --accent-text: #ffffff; --danger: #e0245e;
+  --chip: #e8f5fe; --press: #eef1f4; --field: #f5f7fa;
+  --sheet: #f2f4f7; --sheet-card: #ffffff; --sheet-edge: transparent; --backdrop: rgba(0,0,0,.45);
+  --scroll: rgba(83,100,113,.35); --scroll-hover: rgba(83,100,113,.6);
+  --glass: rgba(242,244,247,.78); --sheet-glass: rgba(242,244,247,.85);
+  --ok: #00ba7c; --warn: #f5a000; --info: #1d9bf0; --tip: #e8f5fe;
+  --soft-accent: rgba(29,155,240,.14); --fab: #4bb0f4;
+  color-scheme: light;
+}
+/* テーマ：「自動」は端末の設定に合わせる。設定で「ライト」「ダーク」に固定もできる */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --card: #16181c; --text: #e7e9ea; --sub: #8b98a5;
+    --line: #2f3336; --accent: #1d9bf0; --accent-text: #ffffff; --danger: #f4212e;
+    --chip: #0b2a3f; --press: #2a2e33; --field: #0e1012;
+    /* ダークでは背景と見分けがつくよう、ダイアログを一段明るくして縁取りする */
+    --sheet: #1a1d21; --sheet-card: #24282d; --sheet-edge: #3a3f45; --backdrop: rgba(0,0,0,.7);
+    --scroll: rgba(139,152,165,.28); --scroll-hover: rgba(139,152,165,.5);
+    --glass: rgba(0,0,0,.72); --sheet-glass: rgba(26,29,33,.82);
+    --ok: #00ba7c; --warn: #ffb020; --info: #1d9bf0; --tip: #0b2a3f;
+    --soft-accent: rgba(29,155,240,.2); --fab: #2f8fd4;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+    --bg: #000000; --card: #16181c; --text: #e7e9ea; --sub: #8b98a5;
+    --line: #2f3336; --accent: #1d9bf0; --accent-text: #ffffff; --danger: #f4212e;
+    --chip: #0b2a3f; --press: #2a2e33; --field: #0e1012;
+    /* ダークでは背景と見分けがつくよう、ダイアログを一段明るくして縁取りする */
+    --sheet: #1a1d21; --sheet-card: #24282d; --sheet-edge: #3a3f45; --backdrop: rgba(0,0,0,.7);
+    --scroll: rgba(139,152,165,.28); --scroll-hover: rgba(139,152,165,.5);
+    --glass: rgba(0,0,0,.72); --sheet-glass: rgba(26,29,33,.82);
+    --ok: #00ba7c; --warn: #ffb020; --info: #1d9bf0; --tip: #0b2a3f;
+    --soft-accent: rgba(29,155,240,.2); --fab: #2f8fd4;
+    color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* スクロールバー：ライト/ダークに合わせた細めのデザイン */
+html, .sheet-body, .combo-menu, textarea { scrollbar-width: auto; scrollbar-color: var(--scroll) transparent; }
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--scroll-hover); }
+::-webkit-scrollbar-corner { background: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; cursor: pointer; }
+[hidden] { display: none !important; }
+
+/* ---------- ヘッダー ---------- */
+header {
+  position: sticky; top: 0; z-index: 5;
+  /* スクロールしたカードが、すりガラス越しにうっすら透けて見える */
+  background: var(--glass); -webkit-backdrop-filter: saturate(1.6) blur(14px); backdrop-filter: saturate(1.6) blur(14px);
+  padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
+  display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line);
+}
+header h1 { font-size: 17px; margin: 0; white-space: nowrap; display: flex; align-items: center; gap: 7px; }
+header .logo { width: 26px; height: 26px; border-radius: 7px; flex: none; }
+/* 設定の一番下：アプリ情報（文字だけで表示） */
+.about { margin: 22px 0 2px; text-align: center; font-size: 12px; color: var(--sub); line-height: 1.8; }
+.about img { border-radius: 9px; display: block; margin: 0 auto 4px; }
+.about .about-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.about a { color: var(--accent); text-decoration: none; }
+header .grow { flex: 1; }
+/* ジャンル切り替えのドロップダウン（ボタンの下にふわっと出る） */
+.genre-menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 20;
+  min-width: 180px; max-width: min(80vw, 320px); max-height: 60vh; overflow-y: auto; padding: 6px;
+  background: var(--sheet-card); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.28);
+  opacity: 0; transform: translateY(-6px) scale(.98); transform-origin: top left;
+  transition: opacity .15s ease, transform .15s ease; pointer-events: none;
+}
+.genre-menu.open { opacity: 1; transform: none; pointer-events: auto; }
+.genre-opt { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: none; background: none;
+  border-radius: 9px; font-size: 15px; text-align: left; color: var(--text); }
+.genre-opt:hover, .genre-opt:focus-visible { background: var(--press); outline: none; }
+.genre-opt .g-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.genre-opt .g-count { font-size: 12px; color: var(--sub); font-variant-numeric: tabular-nums; }
+.genre-opt.sel { color: var(--accent); font-weight: 700; }
+.genre-opt.sel .g-count { color: var(--accent); }
+.genre-opt .g-check { width: 14px; text-align: center; color: var(--accent); }
+.genre-dd { position: relative; flex: 0 1 auto; min-width: 0; max-width: 46vw; }
+.genre-select {
+  /* 設定画面のセレクト（select.plain）と同じ見た目：枠線付きの角丸の箱＋灰色の ▾ */
+  display: block; width: 100%; max-width: 46vw; min-width: 120px; -webkit-appearance: none; appearance: none;
+  font: inherit; font-size: 15px; color: var(--text); cursor: pointer;
+  background-color: var(--field); border: 1px solid var(--line); border-radius: 10px;
+  padding: 7px 34px 7px 12px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; text-align: left;
+  background-image: linear-gradient(45deg, transparent 50%, var(--sub) 50%), linear-gradient(135deg, var(--sub) 50%, transparent 50%);
+  background-position: calc(100% - 19px) 55%, calc(100% - 14px) 55%;
+  background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+.genre-select[aria-expanded="true"], .genre-select:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.icon-btn { flex: none; border: none; border-radius: 12px; width: 38px; height: 38px;
+  display: grid; place-items: center; background: var(--chip); color: var(--accent); transition: transform .3s ease; }
+.icon-btn:active { transform: rotate(45deg) scale(.95); }
+.icon-btn .ic { width: 22px; height: 22px; }
+/* 塗りつぶしのSVGアイコン（文字色で描画） */
+.ic { display: inline-grid; place-items: center; flex: none; }
+.ic svg { width: 100%; height: 100%; fill: currentColor; }
+
+/* ---------- 共通：設定画面スタイルのグループ ---------- */
+.section-title { font-size: 13px; color: var(--sub); margin: 18px 4px 6px; font-weight: 700;
+  display: flex; align-items: center; gap: 6px; }
+.name-row { display: flex; align-items: center; gap: 8px; }
+.name-row .ic { width: 20px; height: 20px; color: var(--accent); }
+.section-title.first { margin-top: 4px; }
+.group { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.group > *:not(:first-child) { border-top: 1px solid var(--line); }
+.group > :first-child { border-top-left-radius: 13px; border-top-right-radius: 13px; }
+.group > :last-child { border-bottom-left-radius: 13px; border-bottom-right-radius: 13px; }
+.group .item { padding: 12px 14px; }
+.group .item .name { font-size: 15px; margin-bottom: 8px; }
+.list-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px; border: none;
+  background: none; font-size: 15px; text-align: left; }
+.list-btn:active { background: var(--press); }
+.list-btn .ico { width: 22px; height: 22px; display: grid; place-items: center; color: var(--accent); }
+.list-btn .lbl { flex: 1; }
+.list-btn .sub { display: block; font-size: 12px; color: var(--sub); margin-top: 2px; }
+.list-btn.chev::after { content: '›'; color: var(--sub); font-size: 20px; }
+a.list-btn { color: inherit; text-decoration: none; }
+.list-btn.danger, .list-btn.danger .ico { color: var(--danger); }
+.hint { font-size: 12px; color: var(--sub); margin-top: 6px; line-height: 1.6; }
+.foot-hint { font-size: 12px; color: var(--sub); margin: 6px 4px 0; line-height: 1.6; }
+
+/* ---------- 一覧 ---------- */
+main { padding: 8px 16px calc(env(safe-area-inset-bottom) + 96px); max-width: 640px; margin: 0 auto; }
+.empty { text-align: center; color: var(--sub); padding: 40px 8px; line-height: 1.9; font-size: 15px; }
+.empty b { color: var(--text); }
+.empty .ex { display: inline-block; margin-top: 12px; padding: 10px 14px; border: 1px dashed var(--line);
+  border-radius: 12px; text-align: left; }
+/* 一覧は1件ずつ独立したカード */
+.cards { position: relative; display: flex; flex-direction: column; gap: 10px; }
+.row {
+  position: relative; display: flex; align-items: stretch; background: var(--card); cursor: pointer;
+  border: 1px solid var(--line); border-radius: 14px;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.row .body { flex: 1; min-width: 0; padding: 13px 4px 13px 14px; font-size: 16px; line-height: 1.5;
+  white-space: pre-wrap; word-break: break-word;
+  align-self: center; }
+.row.pressing { background: var(--press); }
+.handle { flex: none; width: 48px; display: flex; align-items: center; justify-content: center;
+  color: var(--sub); font-size: 20px; touch-action: none; cursor: grab; }
+/* ドラッグ中：持ち上げた行は影付きで指に追従、他の行は滑らかによける */
+.row.dragging { z-index: 4; box-shadow: 0 10px 28px rgba(0,0,0,.35);
+  transition: box-shadow .15s, scale .15s; scale: 1.03; }
+.row.dropping { z-index: 4; transition: transform .2s ease, box-shadow .2s, scale .2s; }
+body.drag-active, body.drag-active * { cursor: grabbing !important; }
+.hl { color: var(--accent); }
+.fab {
+  position: fixed; right: 20px; bottom: calc(env(safe-area-inset-bottom) + 20px);
+  width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--fab);
+  color: var(--accent-text); display: grid; place-items: center; box-shadow: 0 4px 14px rgba(29,155,240,.3);
+  transition: transform .15s;
+}
+.fab:active { transform: scale(.92); }
+.fab .ic { width: 28px; height: 28px; }
+
+/* ---------- ダイアログ ---------- */
+dialog {
+  border: 1px solid var(--sheet-edge); border-radius: 18px; padding: 0 0 12px; width: min(94vw, 480px);
+  background: var(--sheet); color: var(--text); box-shadow: 0 16px 48px rgba(0,0,0,.4);
+  /* キーボードでボタンが隠れないよう、画面上部に表示 */
+  margin: calc(env(safe-area-inset-top) + 16px) auto auto;
+  max-height: calc(100dvh - env(safe-area-inset-top) - 32px); overflow: hidden;
+  /* ふわっと出す・閉じる */
+  opacity: 0; transform: translateY(12px) scale(.97);
+  transition: opacity .2s ease, transform .2s ease;
+}
+dialog[open] { display: flex; flex-direction: column; }
+dialog.show { opacity: 1; transform: none; }
+/* スクロールするのはこの中だけ（下に12pxの余白があるので、角丸でスクロールバーが欠けない） */
+.sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px 8px; }
+dialog::backdrop { background: var(--backdrop); opacity: 0; transition: opacity .2s ease; }
+dialog.show::backdrop { opacity: 1; }
+dialog .group { background: var(--sheet-card); }
+.sheet-head { flex: none; display: flex; align-items: center; gap: 8px; padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--line); }
+.sheet-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+.sheet-head h2 .ic { width: 20px; height: 20px; color: var(--accent); }
+.text-btn { background: none; border: none; color: var(--sub); font-size: 15px; padding: 8px 4px; min-width: 68px; text-align: left; }
+.pill-btn { background: var(--accent); color: var(--accent-text); border: none; border-radius: 999px;
+  font-size: 15px; font-weight: 700; padding: 8px 18px; min-width: 76px; }
+.spacer { min-width: 76px; }
+.err { color: var(--danger); font-size: 13px; margin: 6px 4px 0; }
+.counter { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--sub); font-variant-numeric: tabular-nums; }
+.counter.over { color: var(--danger); font-weight: 700; }
+.err:empty { display: none; }
+input[type=text], textarea, select.plain {
+  width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--field); color: var(--text);
+}
+select.plain, .combo input {
+  -webkit-appearance: none; appearance: none; padding-right: 36px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--sub) 50%), linear-gradient(135deg, var(--sub) 50%, transparent 50%);
+  background-position: calc(100% - 19px) 55%, calc(100% - 14px) 55%;
+  background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+
+/* テキストボックス内ハイライト：色付きの文字を後ろに敷き、上の入力欄の文字を透明にする */
+.hl-wrap { position: relative; border-radius: 10px; background: var(--field); }
+.hl-wrap .hl-back, .hl-wrap textarea {
+  margin: 0; width: 100%; padding: 10px 12px; border: 1px solid transparent; border-radius: 10px;
+  font-family: inherit; font-size: 16px; line-height: 1.5; letter-spacing: normal;
+  white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word; tab-size: 4;
+}
+.hl-wrap .hl-back { position: absolute; inset: 0; overflow: hidden; pointer-events: none; color: var(--text); }
+.hl-wrap textarea {
+  position: relative; display: block; -webkit-appearance: none; appearance: none;
+  background: transparent; color: transparent; -webkit-text-fill-color: transparent;
+  caret-color: var(--text); border-color: var(--line);
+  min-height: 110px; resize: none; overflow: hidden;
+}
+.hl-wrap textarea::placeholder { color: var(--sub); -webkit-text-fill-color: var(--sub); }
+.hl-wrap textarea:focus, .combo input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+/* ジャンル入力：見た目はセレクト、入力で候補を絞り込み */
+.combo { position: relative; }
+.combo input::placeholder { color: var(--sub); }
+.combo-menu { margin-top: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--card);
+  max-height: 220px; overflow-y: auto; }
+.combo-opt { display: block; width: 100%; padding: 11px 12px; border: none; background: none; text-align: left; font-size: 15px; }
+.combo-opt + .combo-opt { border-top: 1px solid var(--line); }
+.combo-opt.active { background: var(--press); }
+.combo-opt.sel { color: var(--accent); font-weight: 700; }
+.combo-opt.sel::after { content: ' ✓'; }
+.combo-opt.muted { color: var(--sub); }
+.combo-opt.new { color: var(--accent); }
+.import-box { padding: 12px 14px; }
+.list-btn:disabled { opacity: .55; cursor: default; }
+.list-btn:disabled::after { display: none; }
+.install-help { padding: 4px 14px 12px 46px; font-size: 13px; line-height: 1.7; color: var(--sub); }
+.install-help ol { margin: 0; padding-left: 1.2em; }
+.install-help b { color: var(--text); }
+.import-box textarea { min-height: 100px; resize: vertical; }
+.import-box .pill-btn { width: 100%; margin-top: 8px; padding: 10px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 90px);
+  transform: translateX(-50%); background: var(--text); color: var(--bg);
+  width: max-content; max-width: calc(100vw - 32px); padding: 10px 16px; border-radius: 999px;
+  font-size: 14px; text-align: center; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 10;
+}
+.toast.show { opacity: 1; }
+.toast.has-action.show { pointer-events: auto; }
+.toast .t-act { border: none; background: none; color: inherit; font-size: 14px; text-decoration: underline; margin-left: 10px; padding: 0; }
+
+/* ---------- チュートリアル（一覧の先頭に表示、×で消せる） ---------- */
+.tip { position: relative; margin: 4px 0 8px; padding: 12px 8px 12px 14px; border-radius: 14px;
+  background: var(--tip); border: 1px solid var(--line); font-size: 14px; line-height: 1.5;
+  transition: opacity .2s, transform .2s; }
+.tip.leaving { opacity: 0; transform: translateY(-8px); }
+.tip .tip-head { display: flex; align-items: center; font-weight: 700; font-size: 15px; margin-bottom: 2px; }
+.tip .tip-lead { color: var(--sub); font-size: 13px; margin: 0 6px 10px 0; }
+.tip .tip-lead p { margin: 0; }
+.tip .tip-lead p + p { margin-top: 4px; }
+/* 文節ごとのまとまり。この中では改行せず、まとまりの間でだけ折り返す */
+.ph { display: inline-block; white-space: nowrap; }
+.tip .tip-head span { flex: 1; }
+.tip ul { list-style: none; margin: 0; padding: 0 6px 0 0; display: flex; flex-direction: column; gap: 8px; }
+.tip li { display: flex; align-items: center; gap: 10px; }
+.tip .tip-ico { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center;
+  background: var(--soft-accent); color: var(--accent); font-size: 15px; font-weight: 700; }
+.tip b { color: var(--accent); }
+.tip .tip-close { flex: none; width: 32px; height: 32px; border: none; background: none; color: var(--sub);
+  border-radius: 999px; font-size: 18px; }
+.tip .tip-close:active { background: var(--press); }
+
+/* ---------- 設定：スイッチ ---------- */
+.switch-row { display: flex; align-items: center; gap: 12px; }
+.switch-row .name { flex: 1; margin: 0 !important; }
+.switch { position: relative; flex: none; width: 34px; height: 20px; }
+.switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.switch .track { position: absolute; inset: 0; border-radius: 999px; background: var(--line); transition: background .2s; pointer-events: none; }
+.switch .track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .2s; }
+.switch input:checked + .track { background: var(--accent); }
+.switch input:checked + .track::after { transform: translateX(14px); }
+.switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<header>
+  <h1><img src="icon.svg" alt="" class="logo" width="26" height="26">タグパレット</h1>
+  <div class="genre-dd" id="genreDD">
+    <button type="button" class="genre-select" id="genreBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="表示するジャンル"></button>
+    <div class="genre-menu" id="genreList" role="listbox"></div>
+  </div>
+  <span class="grow"></span>
+  <button class="icon-btn" id="menuBtn" aria-label="設定"><span class="ic" data-ic="gear"></span></button>
+</header>
+
+<main>
+  <div id="list"></div>
+</main>
+
+<button class="fab" id="addBtn" aria-label="パレットを追加"><span class="ic" data-ic="plus"></span></button>
+
+<!-- 追加・編集 -->
+<dialog id="cardDlg">
+  <div class="sheet-head">
+    <button type="button" id="cardCancel" class="text-btn">キャンセル</button>
+    <h2><span class="ic" id="cardDlgIcon" data-ic="add"></span><span id="cardDlgTitle">パレットを追加</span></h2>
+    <button type="button" id="cardSave" class="pill-btn">保存</button>
+  </div>
+  <div class="sheet-body">
+
+  <div class="section-title first">本文<span class="counter" id="fCount" title="Twitterでの文字数（全角は2、URLは23として数えます）"></span></div>
+  <div class="group">
+    <div class="item">
+      <div class="hl-wrap">
+        <div class="hl-back" id="fBack" aria-hidden="true"></div>
+        <textarea id="fText" placeholder="例：#アニメ名 #実況" autocapitalize="off" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="err" id="fErr"></div>
+
+  <div class="section-title">ジャンル</div>
+  <div class="group">
+    <div class="item">
+      <div class="combo">
+        <input type="text" id="fGenre" placeholder="未分類" autocomplete="off" autocapitalize="off"
+               role="combobox" aria-expanded="false" aria-controls="genreMenu">
+        <div class="combo-menu" id="genreMenu" role="listbox" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="cardExtra">
+    <div class="section-title">操作</div>
+    <div class="group">
+      <button type="button" id="cardCopy" class="list-btn chev"><span class="ico ic" data-ic="copy"></span>
+        <span class="lbl">この文をコピー</span></button>
+      <button type="button" id="cardDelete" class="list-btn chev danger"><span class="ico ic" data-ic="trash"></span>
+        <span class="lbl">このパレットを削除</span></button>
+    </div>
+  </div>
+  </div>
+</dialog>
+
+<!-- 設定 -->
+<dialog id="menuDlg">
+  <div class="sheet-head">
+    <span class="spacer"></span>
+    <h2><span class="ic" data-ic="gear"></span>設定</h2>
+    <button type="button" id="menuClose" class="pill-btn">閉じる</button>
+  </div>
+  <div class="sheet-body">
+
+  <div class="section-title first">アプリとして使う</div>
+  <div class="group">
+    <button type="button" class="list-btn chev" id="installBtn"><span class="ico ic" data-ic="phone"></span>
+      <span class="lbl">ホーム画面に追加<span class="sub" id="installSub"></span></span></button>
+    <div class="install-help" id="installHelp" hidden>
+      <ol id="installSteps"></ol>
+    </div>
+  </div>
+
+  <div class="section-title">全般</div>
+  <div class="group">
+    <div class="item">
+      <div class="name name-row"><span class="ic" data-ic="theme"></span>テーマ</div>
+      <select class="plain" id="themeSelect" aria-label="テーマ">
+        <option value="auto">自動（端末の設定に合わせる）</option>
+        <option value="light">ライト</option>
+        <option value="dark">ダーク</option>
+      </select>
+    </div>
+    <div class="item">
+      <div class="name name-row"><span class="ic" data-ic="tap"></span>タップしたときの動作</div>
+      <select class="plain" id="tapAction" aria-label="タップしたときの動作">
+        <option value="twitter">アプリでTwitterを開く</option>
+        <option value="x">ブラウザでTwitterを開く</option>
+        <option value="copy">クリップボードにコピー</option>
+      </select>
+      <div class="hint" id="tapHint"></div>
+    </div>
+    <div class="item">
+      <div class="name name-row"><span class="ic" data-ic="folder"></span>起動時に表示するジャンル</div>
+      <select class="plain" id="defaultGenre" aria-label="起動時に表示するジャンル"></select>
+      <div class="hint">画面上部のジャンル切り替えとも連動します。</div>
+    </div>
+    <div class="item">
+      <div class="switch-row">
+        <label class="name name-row" for="tipsToggle"><span class="ic" data-ic="bulb"></span>チュートリアルを表示</label>
+        <span class="switch"><input type="checkbox" id="tipsToggle" role="switch"><span class="track"></span></span>
+      </div>
+      <div class="hint">一覧の先頭に「使い方」を表示します。</div>
+    </div>
+  </div>
+
+  <div class="section-title">バックアップ（書き出し）</div>
+  <div class="group">
+    <button type="button" class="list-btn chev" id="exportFile"><span class="ico ic" data-ic="download"></span>
+      <span class="lbl">ファイルに保存<span class="sub">共有シートからファイル・LINE などへ</span></span></button>
+    <button type="button" class="list-btn chev" id="exportCopy"><span class="ico ic" data-ic="copy"></span>
+      <span class="lbl">テキストとしてコピー<span class="sub">メモ帳などに貼り付けて保管</span></span></button>
+  </div>
+
+  <div class="section-title">バックアップ（読み込み）</div>
+  <div class="group">
+    <button type="button" class="list-btn chev" id="importFileBtn"><span class="ico ic" data-ic="upload"></span>
+      <span class="lbl">ファイルから読み込む</span></button>
+    <button type="button" class="list-btn chev" id="importTextBtn"><span class="ico ic" data-ic="paste"></span>
+      <span class="lbl">テキストを貼り付けて読み込む</span></button>
+    <div class="import-box" id="importTextArea" hidden>
+      <textarea id="importText" placeholder="書き出したテキストを貼り付け"></textarea>
+      <button type="button" id="importTextGo" class="pill-btn">読み込む</button>
+    </div>
+  </div>
+
+  <div class="section-title">リセット</div>
+  <div class="group">
+    <button type="button" class="list-btn chev danger" id="resetAll"><span class="ico ic" data-ic="warn"></span>
+      <span class="lbl">初期状態に戻す<span class="sub">すべてのカードと設定を削除します（元に戻せません）</span></span></button>
+  </div>
+
+  <div class="about">
+    <img src="icon.svg" alt="" width="36" height="36">
+    <div class="about-name">タグパレット</div>
+    <div id="appVersion"></div>
+    <div>Author <a href="https://x.com/_mabasasi_code" target="_blank" rel="noopener noreferrer">@_mabasasi_code</a></div>
+    <div>Powered by <a href="https://claude.ai" target="_blank" rel="noopener noreferrer">Claude</a></div>
+  </div>
+  <input type="file" id="importFile" accept=".json,application/json,text/plain" hidden>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span id="toastMsg"></span><button type="button" class="t-act" id="toastAct" hidden></button>
+</div>
+
+<script>
+(() => {
+  // バージョンは sw.js の VERSION だけで管理する（ここでは読み取って表示するだけ）
+  let appVersion = '';
+  const KEY = 'teikei-post.v2';   // 保存データのキー（既存データを引き継ぐため旧名のまま）
+  const OLD_KEY = 'tagjikkyo.v1';
+  const ALL = '*all*';   // 「すべて」を表す値
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- 旧形式 → 新形式 ----------
+  function toItem(p) {
+    if (typeof p === 'string') return { text: p.trim(), genre: '' };
+    if (!p || typeof p !== 'object') return null;
+    const genre = String(p.genre || '').trim();
+    if (typeof p.text === 'string' && p.tags == null) return { text: p.text.trim(), genre };
+    // 最初期の形式（表示名・タグ・先頭文）
+    const tags = String(p.tags || '').split(/[\s,、　]+/)
+      .map(t => t.replace(/^[#＃]+/, '').trim()).filter(Boolean).map(t => '#' + t).join(' ');
+    return { text: [String(p.text || '').trim(), tags].filter(Boolean).join(' '), genre };
+  }
+
+  // ---------- 保存まわり ----------
+  const defaultSettings = { tapAction: 'twitter', genre: ALL, theme: 'auto', tips: true };
+  function migrateSettings(s) {
+    s = { ...(s || {}) };
+    // 以前の「Xの開き方」設定をタップ動作に引き継ぐ
+    if (!['x', 'twitter', 'copy'].includes(s.tapAction)) {
+      s.tapAction = s.openMode === 'app' ? 'twitter' : s.openMode === 'web' ? 'x' : defaultSettings.tapAction;
+    }
+    s = { ...defaultSettings, ...s };
+    if (!['auto', 'light', 'dark'].includes(s.theme)) s.theme = 'auto';
+    s.tips = s.tips !== false;
+    delete s.openMode; delete s.openTarget; delete s.tipsDismissed; delete s.trailingSpace;
+    return s;
+  }
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) {
+        const old = localStorage.getItem(OLD_KEY);
+        if (old) {
+          const o = JSON.parse(old);
+          return { items: (o.presets || []).map(toItem).filter(i => i && i.text).map(i => ({ id: uid(), ...i })),
+                   settings: migrateSettings(o.settings) };
+        }
+        // 初回起動：サンプルを2件（どちらも未分類）入れておく
+        return { items: [
+          { id: uid(), text: '#アニメ名 #実況', genre: '' },
+          { id: uid(), text: 'こんにちは～！今日もよろしくお願いします #実況', genre: '' }
+        ], settings: migrateSettings({}) };
+      }
+      const d = JSON.parse(raw);
+      const items = (Array.isArray(d.items) ? d.items : [])
+        .map(i => ({ id: i.id || uid(), text: String(i.text || ''), genre: String(i.genre || '') }))
+        .filter(i => i.text);
+      return { items, settings: migrateSettings(d.settings) };
+    } catch { return { items: [], settings: migrateSettings({}) }; }
+  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  let state = load();
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch { toast('保存できませんでした（プライベートモード？）', 'err'); }
+  }
+
+  // ---------- ジャンル ----------
+  // ジャンル一覧（名前の降順）。ヘッダーの切り替え・「すべて」の見出し・候補一覧で共通
+  function genres() {
+    const seen = [];
+    for (const i of state.items) if (i.genre && !seen.includes(i.genre)) seen.push(i.genre);
+    return seen.sort((a, b) => b.localeCompare(a, 'ja', { numeric: true }));
+  }
+  const hasUncategorized = () => state.items.some(i => !i.genre);
+  function currentGenre() {
+    const g = state.settings.genre;
+    if (g === ALL) return ALL;
+    if (g === '' ? hasUncategorized() : genres().includes(g)) return g;
+    return ALL; // そのジャンルが無くなっていたら「すべて」に戻す
+  }
+  const genreLabel = (g) => g === ALL ? 'すべて' : (g === '' ? '未分類' : g);
+  function genreOptions() {
+    const opts = [ALL, ...genres()];
+    if (hasUncategorized() && genres().length) opts.push('');
+    return opts;
+  }
+  function fillGenreSelect(sel) {
+    const cur = currentGenre();
+    sel.innerHTML = '';
+    for (const g of genreOptions()) {
+      const o = document.createElement('option');
+      o.value = g; o.textContent = genreLabel(g);
+      if (g === cur) o.selected = true;
+      sel.appendChild(o);
+    }
+  }
+  function setGenre(g) { state.settings.genre = g; save(); render(); }
+  // ---------- ヘッダーのジャンル切り替え（ドロップダウン） ----------
+  // タップ（クリック）で開閉する。メニューの外を押す・Esc でも閉じる。
+  let ddTimer = 0;
+  function renderGenreDD() {
+    const cur = currentGenre();
+    $('genreBtn').textContent = genreLabel(cur);
+    const count = (g) => g === ALL ? state.items.length : state.items.filter(i => i.genre === g).length;
+    $('genreList').innerHTML = genreOptions().map(g => `
+      <button type="button" class="genre-opt${g === cur ? ' sel' : ''}" role="option" aria-selected="${g === cur}" data-g="${esc(g)}">
+        <span class="g-check">${g === cur ? '✓' : ''}</span><span class="g-name">${esc(genreLabel(g))}</span><span class="g-count">${count(g)}</span>
+      </button>`).join('');
+  }
+  function openDD() { clearTimeout(ddTimer); $('genreList').classList.add('open'); $('genreBtn').setAttribute('aria-expanded', 'true'); }
+  function closeDD() { clearTimeout(ddTimer); $('genreList').classList.remove('open'); $('genreBtn').setAttribute('aria-expanded', 'false'); }
+  const ddOpen = () => $('genreList').classList.contains('open');
+  $('genreBtn').addEventListener('click', () => { ddOpen() ? closeDD() : openDD(); });
+  $('genreList').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-g]'); if (!b) return;
+    closeDD(); setGenre(b.dataset.g);
+  });
+  // メニューの外を押す・Esc で閉じる
+  document.addEventListener('pointerdown', (e) => { if (ddOpen() && !$('genreDD').contains(e.target)) closeDD(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && ddOpen()) closeDD(); });
+
+  // ---------- 青字ハイライト ----------
+  const esc = (s) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const TOKEN = /(https?:\/\/[^\s　]+)|([#＃][\p{L}\p{N}\p{M}_ー・]+)/gu;
+  function highlight(text) {
+    let out = '', last = 0;
+    for (const m of text.matchAll(TOKEN)) {
+      out += esc(text.slice(last, m.index)) + '<span class="hl">' + esc(m[0]) + '</span>';
+      last = m.index + m[0].length;
+    }
+    return out + esc(text.slice(last));
+  }
+
+  // ---------- Xを開く ----------
+  function postText(text) {
+    // 登録した文をそのまま使う
+    return text;
+  }
+  // タップしたときの動作
+  //   twitter … twitter:// でアプリを直接開く（開けなければブラウザで開くボタンを出す）
+  //   x       … x.com の投稿画面を別タブで開く
+  //   copy    … クリップボードにコピー
+  function openWeb(t) {
+    // 別タブで開く（タップ操作の中でリンクを押す形にするとブロックされにくい）
+    const a = document.createElement('a');
+    a.href = 'https://x.com/intent/post?text=' + encodeURIComponent(t);
+    a.target = '_blank'; a.rel = 'noopener noreferrer';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  function openApp(t) {
+    // アプリが無いとき、ブラウザはコンソールに
+    //   Failed to launch 'twitter://…' because the scheme does not have a registered handler.
+    // と出すだけで、JavaScript には例外もイベントも返さない（try/catch や onerror では捕まえられない）。
+    // そこで「アプリが開けば、この画面は裏に回る（hidden / blur / pagehide）」ことを使い、
+    // 少し待っても画面が残っていれば、起動に失敗したと判断してトーストを出す。
+    let left = false;
+    const mark = () => { left = true; };
+    const onVis = () => { if (document.hidden) left = true; };
+    window.addEventListener('blur', mark);
+    window.addEventListener('pagehide', mark);
+    document.addEventListener('visibilitychange', onVis);
+    window.location.href = 'twitter://post?message=' + encodeURIComponent(t);
+    setTimeout(() => {
+      window.removeEventListener('blur', mark);
+      window.removeEventListener('pagehide', mark);
+      document.removeEventListener('visibilitychange', onVis);
+      if (left || document.hidden) return;
+      toast('Twitterアプリを開けませんでした', 'warn', {
+        action: { label: 'ブラウザで開く', fn: () => openWeb(t) }, duration: 6000
+      });
+    }, 1200);
+  }
+  function onTap(text) {
+    const t = postText(text);
+    const action = state.settings.tapAction;
+    if (action === 'copy') { copyText(t, 'コピーしました'); return; }
+    if (action === 'twitter') { openApp(t); return; }
+    openWeb(t);
+  }
+
+  // ---------- チュートリアル ----------
+  // 「|」で文節を区切る。区切りの位置でだけ改行される（単語の途中で折り返さない）
+  const TIPS_LEAD = [
+    'SNSで|実況するときなどに、|毎回入力する|ハッシュタグを|ワンタップで|呼び出せる|ツールです。',
+    'よく使う|文章や|定型文を|ためておく、|コピペ帳としても|使えます。'
+  ];
+  const TIPS = [
+    { id: 'add', ico: '+', html: '右下の <b>＋</b> から、|よく使う|タグや文の|カードを|作れます' },
+    { id: 'tap', ico: '↗', html: 'カードを|<b>タップ</b>すると、|その文が|入った状態で|Twitterが開きます' },
+    { id: 'press', ico: '✎', html: 'カードを|<b>長押し</b>で|編集・削除、|右端の <b>≡</b> を|ドラッグで|並べ替えできます' },
+    { id: 'settings', ico: '⚙', html: 'タップしたときの動作や|テーマは、|右上の <b>⚙</b> から|変えられます' }
+  ];
+  const phrases = (html) => html.split('|').map(x => `<span class="ph">${x}</span>`).join('');
+  // 使い方を1枚のカードにまとめて一覧の先頭に出す。× で閉じると設定のチュートリアルがオフになる
+  function renderTips(list) {
+    if (!state.settings.tips) return;
+    const el = document.createElement('div');
+    el.className = 'tip';
+    el.innerHTML = `<div class="tip-head"><span>使い方</span>
+        <button type="button" class="tip-close" aria-label="使い方を閉じる">×</button></div>
+      <div class="tip-lead">${TIPS_LEAD.map(l => `<p>${phrases(l)}</p>`).join('')}</div>
+      <ul>${TIPS.map(t => `<li><span class="tip-ico" aria-hidden="true">${t.ico}</span><span>${phrases(t.html)}</span></li>`).join('')}</ul>`;
+    el.querySelector('.tip-close').addEventListener('click', () => {
+      el.classList.add('leaving');
+      setTimeout(() => { state.settings.tips = false; save(); render(); }, 200);
+    });
+    list.appendChild(el);
+  }
+
+  // ---------- 描画 ----------
+  function render() {
+    renderGenreDD();
+    const list = $('list');
+    list.innerHTML = '';
+    const g = currentGenre();
+    renderTips(list);
+    if (!state.items.length) {
+      list.insertAdjacentHTML('beforeend', `<div class="empty">
+        まだカードがありません。<br>右下の <b>＋</b> から作ってみましょう。
+        <div class="ex">例）<span class="hl">#アニメ名</span> <span class="hl">#実況</span></div>
+      </div>`);
+      return;
+    }
+    // 「すべて」はジャンルごとにグループ分けして表示
+    const sections = g === ALL
+      ? [...genres(), ...(hasUncategorized() ? [''] : [])].map(x => [x, state.items.filter(i => i.genre === x)])
+      : [[g, state.items.filter(i => i.genre === g)]];
+    // ジャンル名の見出しは常に表示する（全部が同じジャンル・未分類のときや、ジャンルで絞り込んだときも）
+    const showTitles = true;
+    sections.forEach(([name, items], n) => {
+      if (!items.length) return;
+      if (showTitles) {
+        const t = document.createElement('div');
+        t.className = 'section-title' + (n === 0 ? ' first' : '');
+        t.textContent = genreLabel(name);
+        list.appendChild(t);
+      } else {
+        const sp = document.createElement('div'); sp.style.height = '4px'; list.appendChild(sp);
+      }
+      const group = document.createElement('div');
+      group.className = 'cards';
+      for (const item of items) {
+        const el = document.createElement('div');
+        el.className = 'row';
+        el.dataset.id = item.id;
+        el.innerHTML = `<div class="body">${highlight(item.text)}</div>
+          <div class="handle" aria-label="ドラッグで並べ替え">≡</div>`;
+        setupRow(el, item);
+        setupDrag(el.querySelector('.handle'), el);
+        group.appendChild(el);
+      }
+      list.appendChild(group);
+    });
+  }
+  const indexOfId = (id) => state.items.findIndex(i => i.id === id);
+
+  // ---------- タップ / 長押し ----------
+  // 押していた時間で「タップ」か「長押し」かを決める。
+  //   ・0.45秒たつと長押し（編集を開く）
+  //   ・スマホのブラウザは自分の長押し処理で pointercancel を送ってくることがあり、
+  //     それでタイマーが止まっても、離したときの click で「押していた時間」を見て長押し扱いにする
+  //   ・長押しのあとに届く click は、どの要素に届いてもタップとして扱わない
+  const LONG_MS = 450, MOVE_TOL = 10;
+  let suppressTapUntil = 0;
+  const tapBlocked = () => Date.now() < suppressTapUntil || !!document.querySelector('dialog[open]');
+  function setupRow(row, item) {
+    const body = row.querySelector('.body');
+    let timer = null, sx = 0, sy = 0, downAt = 0, moved = false, longFired = false;
+    const unpress = () => row.classList.remove('pressing');
+    function fireLong() {
+      clearTimeout(timer); timer = null;
+      if (longFired || moved) return;
+      longFired = true; unpress();
+      suppressTapUntil = Date.now() + 1000;
+      if (navigator.vibrate) navigator.vibrate(15);
+      openEditor(indexOfId(item.id));
+    }
+    row.addEventListener('contextmenu', (e) => e.preventDefault());
+    body.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      longFired = false; moved = false; downAt = Date.now(); sx = e.clientX; sy = e.clientY;
+      row.classList.add('pressing');
+      clearTimeout(timer);
+      timer = setTimeout(fireLong, LONG_MS);
+    });
+    body.addEventListener('pointermove', (e) => {
+      if (!moved && Math.hypot(e.clientX - sx, e.clientY - sy) > MOVE_TOL) {
+        moved = true; clearTimeout(timer); unpress();   // 指が動いた＝スクロール
+      }
+    });
+    body.addEventListener('pointerup', () => { if (!longFired) { clearTimeout(timer); unpress(); } });
+    // ブラウザの長押し処理で cancel が来ても、指が動いていなければ長押しの判定は続ける
+    body.addEventListener('pointercancel', () => { unpress(); if (moved) clearTimeout(timer); });
+    body.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { moved = true; clearTimeout(timer); unpress(); } });
+    // 長押しが成立した指を離したときは、ブラウザが作るクリック自体を出さない
+    body.addEventListener('touchend', (e) => { if (longFired) e.preventDefault(); });
+    body.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (longFired || tapBlocked() || moved) return;
+      if (downAt && Date.now() - downAt >= LONG_MS) { fireLong(); return; }   // 長く押していた → 長押し扱い
+      onTap(item.text);
+    });
+  }
+
+  // ---------- ドラッグで並べ替え（右端の ≡） ----------
+  // 持ち上げた行は指に追従し、他の行は FLIP アニメーションで滑らかによける。
+  // 並べ替えは同じグループ（ジャンル）の中だけ。
+  function setupDrag(handle, row) {
+    let active = false, startPageY = 0, startTop = 0, lastClientY = 0, raf = 0, group = null;
+    handle.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      active = true; group = row.parentElement;
+      lastClientY = e.clientY;
+      startPageY = e.clientY + window.scrollY;
+      startTop = row.offsetTop;
+      row.classList.remove('dropping');
+      row.style.transition = '';
+      row.classList.add('dragging'); document.body.classList.add('drag-active');
+      if (navigator.vibrate) navigator.vibrate(10);
+      // 行をDOM上で動かすとポインタキャプチャが外れるので、window で追いかける
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', end);
+      window.addEventListener('pointercancel', end);
+      window.addEventListener('touchmove', block, { passive: false });
+      raf = requestAnimationFrame(tick);
+    });
+    function block(e) { if (active) e.preventDefault(); }
+    function offsetNow() {
+      // 指の移動量から、DOM上の位置ずれを差し引いた分だけ動かす（グループの外へは出さない）
+      let dy = (lastClientY + window.scrollY - startPageY) - (row.offsetTop - startTop);
+      const minDy = -row.offsetTop;
+      const maxDy = group.clientHeight - row.offsetTop - row.offsetHeight;
+      return Math.max(minDy, Math.min(maxDy, dy));
+    }
+    function place() { row.style.transform = `translateY(${offsetNow()}px)`; }
+    function move(e) {
+      if (!active) return;
+      lastClientY = e.clientY;
+      reorder(); place();
+    }
+    function reorder() {
+      // 上の行は「持ち上げた行の上端」、下の行は「下端」がその行の中央を越えたら入れ替える
+      // （中央同士で比べると、端まで動かしても一番上・一番下と入れ替わらないため）
+      const top = row.offsetTop + offsetNow(), bottom = top + row.offsetHeight;
+      const all = [...group.children], idx = all.indexOf(row);
+      const siblings = all.filter(c => c !== row);
+      const before = siblings.find(c => {
+        const mid = c.offsetTop + c.offsetHeight / 2;
+        return all.indexOf(c) < idx ? top < mid : bottom < mid;
+      }) || null;
+      if ((before ? before.previousElementSibling === row || before === row.nextElementSibling : group.lastElementChild === row)) return;
+      // FLIP：動かす前の位置を記録 → 入れ替え → 差分を打ち消してから0へアニメーション
+      const firsts = new Map(siblings.map(c => [c, c.offsetTop]));
+      if (before) group.insertBefore(row, before); else group.appendChild(row);
+      for (const c of siblings) {
+        const d = firsts.get(c) - c.offsetTop;
+        if (!d) continue;
+        c.style.transition = 'none';
+        c.style.transform = `translateY(${d}px)`;
+        c.getBoundingClientRect(); // 反映させる
+        c.style.transition = 'transform .2s ease';
+        c.style.transform = '';
+      }
+    }
+    // 画面端での自動スクロール
+    function tick() {
+      if (!active) return;
+      const edge = 80, h = window.innerHeight;
+      let dy = 0;
+      if (lastClientY < edge + 50) dy = -Math.ceil((edge + 50 - lastClientY) / 6);
+      else if (lastClientY > h - edge) dy = Math.ceil((lastClientY - (h - edge)) / 6);
+      if (dy) { window.scrollBy(0, dy); reorder(); place(); }
+      raf = requestAnimationFrame(tick);
+    }
+    function end(e) {
+      if (!active) return;
+      if (e && e.type === 'pointerup') { lastClientY = e.clientY; reorder(); }
+      active = false; cancelAnimationFrame(raf);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      window.removeEventListener('touchmove', block);
+      document.body.classList.remove('drag-active');
+      // 置いた場所へ吸い込まれるように戻す
+      row.classList.add('dropping');
+      row.classList.remove('dragging');
+      row.style.transform = '';
+      setTimeout(() => {
+        row.classList.remove('dropping');
+        for (const c of group.children) { c.style.transition = ''; c.style.transform = ''; }
+      }, 220);
+      saveOrder();
+    }
+  }
+  // 画面上の並びを、全体の並びに反映する（表示していない行の位置は変えない）
+  function saveOrder() {
+    const order = [...$('list').querySelectorAll('.row')].map(c => c.dataset.id);
+    const visible = new Set(order);
+    const byId = new Map(state.items.map(i => [i.id, i]));
+    let k = 0;
+    const next = state.items.map(i => visible.has(i.id) ? byId.get(order[k++]) : i);
+    if (next.some((it, n) => it !== state.items[n])) { state.items = next; save(); }
+  }
+  async function copyText(text, okMsg) {
+    try { await navigator.clipboard.writeText(text); toast(okMsg, 'ok'); return true; }
+    catch {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+      ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch {}
+      ta.remove(); if (ok) toast(okMsg, 'ok'); return ok;
+    }
+  }
+
+  // ---------- ダイアログ（ふわっと開閉） ----------
+  function openDlg(dlg) {
+    clearTimeout(dlg._t);
+    if (!dlg.open) dlg.showModal();
+    // 開いた直後の状態を一度確定させてからクラスを付ける（描画待ちに頼らずアニメーションさせる）
+    dlg.getBoundingClientRect();
+    dlg.classList.add('show');
+  }
+  function closeDlg(dlg) {
+    if (!dlg.open) return;
+    dlg.classList.remove('show');
+    clearTimeout(dlg._t);
+    dlg._t = setTimeout(() => dlg.close(), 200);
+  }
+  // Esc・戻る操作でも同じように閉じる
+  for (const d of document.querySelectorAll('dialog')) {
+    d.addEventListener('cancel', (e) => { e.preventDefault(); closeDlg(d); });
+  }
+
+  // ---------- 追加・編集ダイアログ ----------
+  let editingIndex = -1;
+  function openEditor(i = -1) {
+    editingIndex = i;
+    const item = i >= 0 ? state.items[i] : null;
+    const g = currentGenre();
+    $('cardDlgTitle').textContent = item ? 'パレットを編集' : 'パレットを追加';
+    setIcon($('cardDlgIcon'), item ? 'edit' : 'add');
+    $('fText').value = item ? item.text : '';
+    // 新規は、いま表示しているジャンルを最初から入れておく
+    $('fGenre').value = item ? item.genre : (g === ALL ? '' : g);
+    $('fErr').textContent = '';
+    $('cardExtra').hidden = !item;
+    closeMenu();
+    openDlg($('cardDlg'));
+    updatePreview();
+    const ta = $('fText');
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+  }
+
+  // ---------- ジャンル入力（コンボボックス） ----------
+  const gInput = $('fGenre'), gMenu = $('genreMenu');
+  let menuOpts = [], activeIdx = -1, typed = false;
+  function buildMenu() {
+    const v = gInput.value.trim();
+    const all = genres();
+    // フォーカスしただけのときは全候補、入力したら絞り込み
+    const list = typed && v ? all.filter(x => x.toLowerCase().includes(v.toLowerCase())) : all;
+    menuOpts = [];
+    if (typed && v && !all.includes(v)) menuOpts.push({ value: v, label: `＋「${v}」を新しく作る`, cls: 'new' });
+    for (const x of list) menuOpts.push({ value: x, label: x, cls: x === v ? 'sel' : '' });
+    menuOpts.push({ value: '', label: '未分類', cls: 'muted' + (v === '' ? ' sel' : '') });
+    activeIdx = -1;
+    gMenu.innerHTML = menuOpts.map((o, k) =>
+      `<button type="button" class="combo-opt ${o.cls}" role="option" data-k="${k}">${esc(o.label)}</button>`).join('');
+  }
+  function openMenu() { buildMenu(); gMenu.hidden = false; gInput.setAttribute('aria-expanded', 'true'); }
+  function closeMenu() { gMenu.hidden = true; gInput.setAttribute('aria-expanded', 'false'); typed = false; }
+  function pick(k) { gInput.value = menuOpts[k].value; closeMenu(); gInput.blur(); }
+  gInput.addEventListener('focus', () => { typed = false; openMenu(); });
+  gInput.addEventListener('click', () => { if (gMenu.hidden) { typed = false; openMenu(); } });
+  gInput.addEventListener('input', () => { typed = true; openMenu(); });
+  gInput.addEventListener('blur', () => setTimeout(closeMenu, 150));
+  // 候補を押してもフォーカスが外れて閉じないように
+  gMenu.addEventListener('pointerdown', (e) => e.preventDefault());
+  gMenu.addEventListener('click', (e) => { const b = e.target.closest('[data-k]'); if (b) pick(+b.dataset.k); });
+  gInput.addEventListener('keydown', (e) => {
+    if (gMenu.hidden) return;
+    const opts = gMenu.querySelectorAll('.combo-opt');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIdx = (activeIdx + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
+      opts.forEach((o, k) => o.classList.toggle('active', k === activeIdx));
+      opts[activeIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeIdx >= 0) pick(activeIdx); else { closeMenu(); gInput.blur(); }
+    } else if (e.key === 'Escape') { e.preventDefault(); closeMenu(); }
+  });
+
+  $('cardDelete').addEventListener('click', () => {
+    if (editingIndex < 0) return;
+    if (!confirm('このパレットを削除しますか？')) return;
+    state.items.splice(editingIndex, 1); save(); render();
+    closeDlg($('cardDlg')); toast('削除しました', 'ok');
+  });
+  $('cardCopy').addEventListener('click', () => {
+    const text = $('fText').value.trim();
+    if (text) copyText(postText(text), 'コピーしました');
+  });
+  // Xの文字数の数え方に合わせる：全角（日本語など）は2、URLは長さに関係なく23、それ以外は1。上限は280
+  function xLength(text) {
+    let n = 0;
+    const urlRe = /https?:\/\/[^\s　]+/g;
+    const rest = text.replace(urlRe, () => { n += 23; return ''; });
+    for (const ch of rest) {
+      const c = ch.codePointAt(0);
+      const light = (c <= 0x10FF) || (c >= 0x2000 && c <= 0x200D) || (c >= 0x2010 && c <= 0x201F) || (c >= 0x2032 && c <= 0x2037);
+      n += light ? 1 : 2;
+    }
+    return n;
+  }
+  function updateCount() {
+    const n = xLength($('fText').value), el = $('fCount');
+    el.textContent = `${n}文字`;
+    el.classList.toggle('over', n > 280);
+  }
+  function updatePreview() {
+    updateCount();
+    const ta = $('fText');
+    // 末尾の改行も高さに反映されるよう、最後に空白を足す
+    $('fBack').innerHTML = highlight(ta.value) + '​';
+    // 入力欄を中身に合わせて伸ばす（スクロールバーが出ると折り返し位置がずれるため）
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+    $('fErr').textContent = '';
+  }
+  $('fText').addEventListener('input', updatePreview);
+  $('addBtn').addEventListener('click', () => openEditor(-1));
+  $('cardCancel').addEventListener('click', () => closeDlg($('cardDlg')));
+  $('cardSave').addEventListener('click', () => {
+    const text = $('fText').value.trim();
+    const genre = $('fGenre').value.trim();
+    if (!text) { $('fErr').textContent = '文を入力してください'; $('fText').focus(); return; }
+    if (editingIndex >= 0) Object.assign(state.items[editingIndex], { text, genre });
+    else state.items.push({ id: uid(), text, genre });
+    // 別のジャンルで保存したら、行が消えたように見えないよう表示を切り替える
+    const g = currentGenre();
+    if (g !== ALL && g !== genre) state.settings.genre = genre;
+    save(); render();
+    document.activeElement?.blur();
+    closeDlg($('cardDlg'));
+    toast('保存しました', 'ok');
+  });
+
+  // ---------- 設定 ----------
+  const TAP_HINTS = {
+    twitter: 'Twitterアプリを直接開きます。開けなかったときはお知らせを表示します。',
+    x: 'ブラウザでTwitterの投稿画面を別タブで開きます。',
+    copy: 'クリップボードにコピーします。好きなアプリに貼り付けられます。'
+  };
+  function applyTheme() {
+    const t = state.settings.theme;
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+    else delete document.documentElement.dataset.theme;
+  }
+  $('themeSelect').addEventListener('change', (e) => { state.settings.theme = e.target.value; save(); applyTheme(); });
+  $('tipsToggle').addEventListener('change', (e) => {
+    state.settings.tips = e.target.checked;
+    save(); render();
+  });
+  function syncTapAction() {
+    $('tapAction').value = state.settings.tapAction;
+    $('tapHint').textContent = TAP_HINTS[state.settings.tapAction];
+  }
+  $('tapAction').addEventListener('change', (e) => { state.settings.tapAction = e.target.value; save(); syncTapAction(); });
+  $('menuBtn').addEventListener('click', () => {
+    fillGenreSelect($('defaultGenre'));
+    syncTapAction();
+    $('themeSelect').value = state.settings.theme;
+    $('tipsToggle').checked = state.settings.tips;
+    $('importTextArea').hidden = true;
+    $('installHelp').hidden = true;
+    syncInstall();
+    openDlg($('menuDlg'));
+  });
+  $('menuClose').addEventListener('click', () => closeDlg($('menuDlg')));
+  $('defaultGenre').addEventListener('change', (e) => setGenre(e.target.value));
+
+  // ---------- エクスポート ----------
+  function exportJSON() {
+    const { genre, ...settings } = state.settings;
+    return JSON.stringify({
+      app: 'tag-palette', appVersion, version: 3, exportedAt: new Date().toISOString(),
+      items: state.items.map(i => i.genre ? { text: i.text, genre: i.genre } : { text: i.text }),
+      settings: { ...settings, genre: genre === ALL ? null : genre }
+    }, null, 2);
+  }
+  $('exportFile').addEventListener('click', async () => {
+    const json = exportJSON();
+    const d = new Date();
+    const fname = `tag-palette-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`;
+    const file = new File([json], fname, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'タグパレット バックアップ' }); return; }
+      catch (err) { if (err.name === 'AbortError') return; }
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(file); a.download = fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('ファイルを保存しました', 'ok');
+  });
+  $('exportCopy').addEventListener('click', async () => {
+    const json = exportJSON();
+    if (!(await copyText(json, 'コピーしました'))) {
+      $('importTextArea').hidden = false; $('importText').value = json;
+      $('importText').select(); toast('自動コピーできないため、表示した文字を手動でコピーしてください', 'warn');
+    }
+  });
+
+  // ---------- インポート ----------
+  function importData(text) {
+    let d;
+    try { d = JSON.parse(text); } catch { toast('読み込めません（形式が違います）', 'err'); return; }
+    const list = Array.isArray(d) ? d : (d.items || d.presets);
+    if (!Array.isArray(list)) { toast('パレットが見つかりません', 'err'); return; }
+    const incoming = list.map(toItem).filter(i => i && i.text);
+    if (!incoming.length) { toast('有効なパレットがありません', 'err'); return; }
+
+    let replace = false;
+    if (state.items.length) {
+      replace = confirm(`${incoming.length}件を読み込みます。\n\n［OK］今のパレットを置き換える\n［キャンセル］今のパレットに追加する`);
+    }
+    const key = (i) => i.genre + '\u0000' + i.text;
+    let added = incoming.length;
+    if (replace) {
+      state.items = incoming.map(i => ({ id: uid(), ...i }));
+      if (d.settings) {
+        const s = { ...d.settings };
+        s.genre = (s.genre == null) ? ALL : String(s.genre);
+        state.settings = migrateSettings(s);
+      }
+    } else {
+      const seen = new Set(state.items.map(key));
+      const add = incoming.filter(i => !seen.has(key(i)) && seen.add(key(i)));
+      state.items.push(...add.map(i => ({ id: uid(), ...i })));
+      added = add.length;
+    }
+    save(); render();
+    closeDlg($('menuDlg'));
+    const skipped = incoming.length - added;
+    setTimeout(() => toast(`${added}件を読み込みました` + (skipped ? `（重複${skipped}件はスキップ）` : ''), 'ok'), 50);
+  }
+  $('importFileBtn').addEventListener('click', () => $('importFile').click());
+  $('importFile').addEventListener('change', async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    importData(await f.text()); e.target.value = '';
+  });
+  $('importTextBtn').addEventListener('click', () => {
+    $('importTextArea').hidden = false; $('importText').value = ''; $('importText').focus();
+  });
+  $('importTextGo').addEventListener('click', () => importData($('importText').value));
+
+  // ---------- アイコン定義（24x24・塗りつぶし） ----------
+  const ICONS = {
+    plus: '<path d="M12 4.5a1.6 1.6 0 0 1 1.6 1.6v4.3h4.3a1.6 1.6 0 0 1 0 3.2h-4.3v4.3a1.6 1.6 0 0 1-3.2 0v-4.3H6.1a1.6 1.6 0 0 1 0-3.2h4.3V6.1A1.6 1.6 0 0 1 12 4.5z"/>',
+    gear: '<path fill-rule="evenodd" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.47.47 0 0 0-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/>',
+    add: '<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 5.2a1.2 1.2 0 0 0-1.2 1.2v2.4H8.4a1.2 1.2 0 0 0 0 2.4h2.4v2.4a1.2 1.2 0 0 0 2.4 0v-2.4h2.4a1.2 1.2 0 0 0 0-2.4h-2.4V8.4A1.2 1.2 0 0 0 12 7.2z"/>',
+    edit: '<path d="M16.2 3.4a2.3 2.3 0 0 1 3.3 0l1.1 1.1a2.3 2.3 0 0 1 0 3.3L9.4 19 3.5 20.5 5 14.6z"/>',
+    copy: '<rect x="3" y="7.5" width="12.5" height="13.5" rx="3" opacity=".45"/><rect x="8.5" y="3" width="12.5" height="13.5" rx="3"/>',
+    trash: '<path d="M9.2 2.5h5.6a1.2 1.2 0 0 1 1.2 1.2V5h3.8a1 1 0 1 1 0 2h-.9l-1 13a2.2 2.2 0 0 1-2.2 2H8.3a2.2 2.2 0 0 1-2.2-2l-1-13h-.9a1 1 0 1 1 0-2H8V3.7a1.2 1.2 0 0 1 1.2-1.2z"/>',
+    download: '<path d="M12 2.8a1.5 1.5 0 0 1 1.5 1.5v8.3l2.4-2.4a1.5 1.5 0 0 1 2.2 2.1l-5 5a1.5 1.5 0 0 1-2.2 0l-5-5a1.5 1.5 0 0 1 2.2-2.1l2.4 2.4V4.3A1.5 1.5 0 0 1 12 2.8z"/><rect x="4" y="18.2" width="16" height="3" rx="1.5"/>',
+    upload: '<path d="M12 16.7a1.5 1.5 0 0 1-1.5-1.5V6.9L8.1 9.3A1.5 1.5 0 0 1 5.9 7.2l5-5a1.5 1.5 0 0 1 2.2 0l5 5a1.5 1.5 0 0 1-2.2 2.1l-2.4-2.4v8.3a1.5 1.5 0 0 1-1.5 1.5z"/><rect x="4" y="18.2" width="16" height="3" rx="1.5"/>',
+    paste: '<path fill-rule="evenodd" d="M9 2h6a1 1 0 0 1 1 1v1h1.5A2.5 2.5 0 0 1 20 6.5v13a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 19.5v-13A2.5 2.5 0 0 1 6.5 4H8V3a1 1 0 0 1 1-1zm-1 9a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2zm0 4a1 1 0 1 0 0 2h5a1 1 0 1 0 0-2z"/>',
+    warn: '<path fill-rule="evenodd" d="M10.3 3.6a2 2 0 0 1 3.4 0l8.2 14.2A2 2 0 0 1 20.2 21H3.8a2 2 0 0 1-1.7-3.2zM12 8.8a1.2 1.2 0 0 0-1.2 1.2v4a1.2 1.2 0 0 0 2.4 0v-4A1.2 1.2 0 0 0 12 8.8zm0 7.5a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6z"/>',
+    // スマホ（ホーム画面に追加）
+    phone: '<path fill-rule="evenodd" d="M8 2h8a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3zm-.6 3v12.6h9.2V5zM12 18.7a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>',
+    // 指でタップ
+    tap: '<path d="M9.5 3a2 2 0 0 1 2 2v5.2l.6-.1a2 2 0 0 1 2.3 1.2 2 2 0 0 1 2.7.8 2 2 0 0 1 2.9 1.8v3.4A6.7 6.7 0 0 1 13.3 24h-1.1a6.7 6.7 0 0 1-5.6-3l-3-4.7a1.9 1.9 0 0 1 2.9-2.4l1 1V5a2 2 0 0 1 2-2z"/>',
+    // 半分塗りの丸（ライト/ダーク）
+    theme: '<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2.2v15.6a7.8 7.8 0 0 0 0-15.6z"/>',
+    // フォルダ
+    folder: '<path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h3.6a2 2 0 0 1 1.4.6L12.3 6.4h6.2A2.5 2.5 0 0 1 21 8.9v8.6a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/>',
+    // 電球
+    bulb: '<path d="M12 2a7 7 0 0 1 4.2 12.6c-.7.5-1.2 1.3-1.2 2.2v.2H9v-.2c0-.9-.5-1.7-1.2-2.2A7 7 0 0 1 12 2z"/><rect x="9" y="18.5" width="6" height="1.8" rx=".9"/><rect x="10" y="21" width="4" height="1.8" rx=".9"/>'
+  };
+
+  // ---------- その他 ----------
+  // ---------- メッセージ（シンプルな文字だけの表示） ----------
+  let tt, toastAction = null;
+  function hideToast() { $('toast').classList.remove('show'); clearTimeout(tt); toastAction = null; }
+  function toast(msg, type = 'info', opts = {}) {
+    const t = $('toast');
+    // 開いているダイアログがあればその中に移す（モーダルの上に表示するため）
+    const host = [...document.querySelectorAll('dialog.show')].pop() || document.body;
+    if (t.parentElement !== host) host.appendChild(t);
+    $('toastMsg').textContent = msg;
+    toastAction = opts.action ? opts.action.fn : null;
+    $('toastAct').hidden = !opts.action;
+    if (opts.action) $('toastAct').textContent = opts.action.label;
+    t.classList.toggle('has-action', !!opts.action);
+    t.classList.add('show');
+    clearTimeout(tt); tt = setTimeout(hideToast, opts.duration || 2400);
+  }
+  $('toastAct').addEventListener('click', () => { const fn = toastAction; hideToast(); if (fn) fn(); });
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  // バージョン表示は version.js の APP_CACHE（tag-palette-v22）と APP_RELEASED（日付）から作る → 「2026-11-21 v22」
+  if (self.APP_CACHE) {
+    appVersion = [self.APP_RELEASED, self.APP_CACHE.replace('tag-palette-', '')].filter(Boolean).join(' ');
+  }
+  $('appVersion').textContent = appVersion || '（バージョン情報を読み込めませんでした）';
+
+  // ---------- ホーム画面に追加（PWA） ----------
+  // Android / PC の Chrome・Edge は beforeinstallprompt で本物のインストール画面を出せる。
+  // iPhone / iPad の Safari にはその仕組みが無いので、手順を表示する。
+  let installPrompt = null;
+  const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const STEPS = {
+    ios: ['<b>Safari</b> でこのページを開く', '画面下の <b>共有ボタン</b>（四角に上矢印）をタップ', '<b>ホーム画面に追加</b> を選んで「追加」'],
+    other: ['<b>Chrome</b> などのブラウザでこのページを開く', '右上の <b>︙</b> メニューを開く', '<b>アプリをインストール</b> または <b>ホーム画面に追加</b> を選ぶ']
+  };
+  function syncInstall() {
+    const btn = $('installBtn'), sub = $('installSub');
+    btn.disabled = false;
+    if (isStandalone()) { sub.textContent = 'アプリとして起動しています'; btn.disabled = true; $('installHelp').hidden = true; }
+    else if (installPrompt) sub.textContent = 'タップするとインストールできます';
+    else sub.textContent = 'アプリのようにホーム画面から開けます（手順を表示）';
+  }
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; syncInstall(); });
+  window.addEventListener('appinstalled', () => { installPrompt = null; syncInstall(); toast('ホーム画面に追加しました', 'ok'); });
+  $('installBtn').addEventListener('click', async () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      try { await installPrompt.userChoice; } catch {}
+      installPrompt = null; syncInstall();
+      return;
+    }
+    const box = $('installHelp');
+    $('installSteps').innerHTML = (isIOS ? STEPS.ios : STEPS.other).map(x => `<li>${x}</li>`).join('');
+    box.hidden = !box.hidden;
+  });
+  syncInstall();
+
+  // ---------- 初期状態に戻す ----------
+  $('resetAll').addEventListener('click', () => {
+    const ok = confirm('⚠ 初期状態に戻します\n\n'
+      + 'すべてのパレット・ジャンル・設定が削除され、元に戻せません。\n'
+      + '残したい場合は、先に「バックアップ（書き出し）」で保存してください。\n\n'
+      + '本当に初期状態に戻しますか？');
+    if (!ok) return;
+    try { localStorage.removeItem(KEY); localStorage.removeItem(OLD_KEY); } catch {}
+    location.reload();
+  });
+  // ---------- アイコン（塗りつぶし） ----------
+  function setIcon(el, name) {
+    el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+  }
+  for (const el of document.querySelectorAll('[data-ic]')) setIcon(el, el.dataset.ic);
+
+  applyTheme();
+  render();
+})();
+</script>
+</body>
+</html>

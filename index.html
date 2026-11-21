@@ -189,6 +189,12 @@ a.list-btn { color: inherit; text-decoration: none; }
 .list-btn:disabled { opacity: .45; cursor: default; }
 .list-btn:disabled:active { background: none; }
 /* 読み込みダイアログ：受け取った文（タグ・URL は青字） */
+.share-prev { white-space: pre-line; color: var(--accent) !important; word-break: break-word; }
+.list-btn:disabled .share-prev { color: var(--sub) !important; }
+.foot-hint.warn-note { color: var(--danger); }
+.tw-tip { margin: 0 0 4px; }
+.tw-tip .tip-head { min-height: 28px; margin-bottom: 6px; }
+.tw-tip .tip-ico svg { width: 16px; height: 16px; }
 .share-src { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 30vh; overflow: auto; }
 .head-spacer { visibility: hidden; pointer-events: none; }
 .hint { font-size: 12px; color: var(--sub); margin-top: 6px; line-height: 1.6; }
@@ -237,6 +243,7 @@ dialog {
   background: var(--sheet); color: var(--text); box-shadow: 0 16px 48px rgba(0,0,0,.4);
   /* キーボードでボタンが隠れないよう、画面上部に表示 */
   margin: calc(env(safe-area-inset-top) + 66px) auto auto;   /* ヘッダー（約58px）の分だけ下げる */
+  max-height: calc(100vh - env(safe-area-inset-top) - 82px);   /* dvh に未対応の古いブラウザ向け */
   max-height: calc(100dvh - env(safe-area-inset-top) - 82px); overflow: hidden;
   /* ふわっと出す・閉じる */
   opacity: 0; transform: translateY(12px) scale(.97);
@@ -245,7 +252,9 @@ dialog {
 dialog[open] { display: flex; flex-direction: column; }
 dialog.show { opacity: 1; transform: none; }
 /* スクロールするのはこの中だけ（下に12pxの余白があるので、角丸でスクロールバーが欠けない） */
-.sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px 8px; }
+/* flex: 1（基準の高さ 0）だと、高さが決まっていないダイアログの中で Safari（iPad など）が高さ 0 にしてしまう。
+   中身の高さを基準にして、入りきらないときだけ縮めてスクロールさせる */
+.sheet-body { flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 4px 16px 8px; }
 dialog::backdrop { background: var(--backdrop); opacity: 0; transition: opacity .2s ease; }
 dialog.show::backdrop { opacity: 1; }
 dialog .group { background: var(--sheet-card); }
@@ -311,6 +320,11 @@ select.plain, .combo input {
 .install-help b { color: var(--text); }
 .import-box textarea { min-height: 100px; resize: vertical; }
 .import-box .pill-btn { width: 100%; margin-top: 8px; padding: 10px; }
+.tw-import { margin-top: 4px; }
+.tw-row { display: flex; gap: 8px; align-items: center; }
+.tw-row input { flex: 1; min-width: 0; }
+.tw-row .pill-btn { flex: none; padding: 9px 16px; }
+.share-src:empty::before { content: 'URLを入れると、ここにツイートの本文が表示されます'; color: var(--sub); }
 
 .toast {
   position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 90px);
@@ -384,12 +398,17 @@ select.plain, .combo input {
   </div>
   <div class="sheet-body">
 
-  <div class="section-title first">本文<span class="counter" id="fCount" title="Twitterでの文字数（全角は2、URLは23として数えます）"></span></div>
+  <div class="group tw-import">
+    <button type="button" class="list-btn chev" id="twBtn"><span class="ico ic" data-ic="quote"></span>
+      <span class="lbl">ツイートから引用<span class="sub">URLから本文やタグを取り込みます</span></span></button>
+  </div>
+
+  <div class="section-title">本文<span class="counter" id="fCount" title="Twitterでの文字数（全角は2、URLは23として数えます）"></span></div>
   <div class="group">
     <div class="item">
       <div class="hl-wrap">
         <div class="hl-back" id="fBack" aria-hidden="true"></div>
-        <textarea id="fText" placeholder="例：#アニメ名 #実況" autocapitalize="off" spellcheck="false"></textarea>
+        <textarea id="fText" autofocus placeholder="例：#アニメ名 #実況" autocapitalize="off" spellcheck="false"></textarea>
       </div>
     </div>
   </div>
@@ -418,15 +437,34 @@ select.plain, .combo input {
   </div>
 </dialog>
 
-<!-- 共有・連携で受け取ったテキストの読み込み -->
+<!-- ツイートの引用（共有で受け取ったとき・追加画面の「ツイートから引用」から開く） -->
 <dialog id="shareDlg">
   <div class="sheet-head">
     <button type="button" id="shareCancel" class="text-btn">キャンセル</button>
-    <h2><span class="ic" data-ic="inbox"></span><span>テキストの読み込み</span></h2>
+    <h2><span class="ic" data-ic="quote"></span><span>ツイートの引用</span></h2>
     <span class="text-btn head-spacer" aria-hidden="true">キャンセル</span>
   </div>
   <div class="sheet-body">
-  <div class="section-title first">受け取ったテキスト</div>
+  <!-- 使い方（一覧の「使い方」と同じ見た目。閉じるボタンなし） -->
+  <div class="tip tw-tip">
+    <div class="tip-head"><span>使い方</span></div>
+    <ul>
+      <li><span class="tip-ico ic" data-ic="copy" aria-hidden="true"></span><span><span class="ph"><b>iPhone</b>：</span><span class="ph">Twitterアプリで</span><span class="ph">ツイートの</span><span class="ph"><b>共有</b>から</span><span class="ph"><b>リンクをコピー</b>して、</span><span class="ph">下の</span><span class="ph">URL欄に</span><span class="ph">貼り付けます</span></span></li>
+      <li><span class="tip-ico ic" data-ic="inbox" aria-hidden="true"></span><span><span class="ph"><b>Android</b>：</span><span class="ph">Twitterアプリで</span><span class="ph">ツイートの</span><span class="ph"><b>共有</b>から</span><span class="ph"><b>タグパレット</b>を</span><span class="ph">選ぶと、</span><span class="ph">この画面が</span><span class="ph">開きます</span></span></li>
+    </ul>
+  </div>
+  <div class="section-title">ツイートのURL</div>
+  <div class="group">
+    <div class="item">
+      <div class="tw-row">
+        <input type="text" id="twUrl" inputmode="url" placeholder="https://x.com/…/status/…" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button type="button" class="pill-btn" id="twGo">取得</button>
+      </div>
+    </div>
+  </div>
+  <div class="err" id="twErr"></div>
+
+  <div class="section-title">本文</div>
   <div class="group">
     <div class="item"><div class="share-src" id="shareSrc"></div></div>
   </div>
@@ -435,13 +473,13 @@ select.plain, .combo input {
   <div class="section-title">パレットにする方法</div>
   <div class="group">
     <button type="button" class="list-btn chev" data-share="lines"><span class="ico ic" data-ic="hash"></span>
-      <span class="lbl">タグを抜き出す（改行）<span class="sub share-count"></span></span></button>
+      <span class="lbl">タグだけ取り出す（1行に1つ）<span class="sub share-prev"></span></span></button>
     <button type="button" class="list-btn chev" data-share="row"><span class="ico ic" data-ic="hash"></span>
-      <span class="lbl">タグを抜き出す（並べる）<span class="sub share-count"></span></span></button>
+      <span class="lbl">タグだけ取り出す（横に並べる）<span class="sub share-prev"></span></span></button>
     <button type="button" class="list-btn chev" data-share="raw"><span class="ico ic" data-ic="paste"></span>
-      <span class="lbl">そのまま貼り付け</span></button>
+      <span class="lbl">全文をそのまま使う</span></button>
   </div>
-  <div class="foot-hint">選ぶと、その内容でパレットの追加画面が開きます。</div>
+  <div class="foot-hint" id="shareFoot">選ぶと、その内容でパレットの追加画面が開きます。</div>
   </div>
 </dialog>
 
@@ -547,7 +585,7 @@ select.plain, .combo input {
     <details class="about-privacy">
       <summary>データの保存とアクセス解析について</summary>
       <p>パレットや設定などのアプリのデータは、この端末（ブラウザ）の中にだけ保存されます。サーバーに送られることはありません。</p>
-      <p>Twitterのツイートを共有して読み込んだときは、本文を取得するためにそのツイートのURLをTwitter（X）に送ります。</p>
+      <p>ツイートを引用するときは、本文を取得するためにそのツイートのURLをTwitter（X）に送ります。</p>
       <p>このサイトでは、利用状況を把握するためにGoogleタグマネージャー（Googleアナリティクス）を使用しています。Cookieを使って匿名のデータを収集しますが、個人を特定する情報は含みません。</p>
       <p><a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" rel="noopener noreferrer">Googleによるデータの使用について</a></p>
     </details>
@@ -823,12 +861,16 @@ select.plain, .combo input {
         moved = true; clearTimeout(timer); unpress();   // 指が動いた＝スクロール
       }
     });
-    body.addEventListener('pointerup', () => { if (!longFired) { clearTimeout(timer); unpress(); } });
+    body.addEventListener('pointerup', () => {
+      if (!longFired) { clearTimeout(timer); unpress(); return; }
+      // 長押しで開いた編集画面：指を離した操作の中でもう一度フォーカスすると、スマホでもカーソルとキーボードが出る
+      focusText();
+    });
     // ブラウザの長押し処理で cancel が来ても、指が動いていなければ長押しの判定は続ける
     body.addEventListener('pointercancel', () => { unpress(); if (moved) clearTimeout(timer); });
     body.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { moved = true; clearTimeout(timer); unpress(); } });
     // 長押しが成立した指を離したときは、ブラウザが作るクリック自体を出さない
-    body.addEventListener('touchend', (e) => { if (longFired) e.preventDefault(); });
+    body.addEventListener('touchend', (e) => { if (longFired) { e.preventDefault(); focusText(); } });
     body.addEventListener('click', (e) => {
       e.preventDefault();
       if (longFired || tapBlocked() || moved) return;
@@ -981,8 +1023,13 @@ select.plain, .combo input {
     closeMenu();
     openDlg($('cardDlg'));
     updatePreview();
+    focusText();
+  }
+  // 本文の末尾にカーソルを置く
+  function focusText() {
+    if (!$('cardDlg').open) return;
     const ta = $('fText');
-    ta.focus();
+    ta.focus({ preventScroll: true });
     ta.setSelectionRange(ta.value.length, ta.value.length);
   }
 
@@ -1219,6 +1266,8 @@ select.plain, .combo input {
     hash: '<path d="M10 3.5 8 20.5M16 3.5l-2 17M4.5 8.8h16M3.5 15.2h16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
     // 受け取る（トレイに矢印）
     inbox: '<path d="M12 2.5a1.4 1.4 0 0 1 1.4 1.4v6.7l1.9-1.9a1.4 1.4 0 1 1 2 2l-4.3 4.3a1.4 1.4 0 0 1-2 0l-4.3-4.3a1.4 1.4 0 1 1 2-2l1.9 1.9V3.9A1.4 1.4 0 0 1 12 2.5z"/><path d="M3 14.2a1.2 1.2 0 0 1 1.2-1.2h3.1a1 1 0 0 1 .9.6l.7 1.5a1.5 1.5 0 0 0 1.4.9h3.4a1.5 1.5 0 0 0 1.4-.9l.7-1.5a1 1 0 0 1 .9-.6h3.1a1.2 1.2 0 0 1 1.2 1.2V18a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/>',
+    // 引用（吹き出し）
+    quote: '<path d="M5 3.5h14A2.5 2.5 0 0 1 21.5 6v9a2.5 2.5 0 0 1-2.5 2.5h-6.2l-4.3 3.3a.8.8 0 0 1-1.3-.6v-2.7H5A2.5 2.5 0 0 1 2.5 15V6A2.5 2.5 0 0 1 5 3.5zm3.2 5.2a1.6 1.6 0 0 0-1.6 1.6v.1a1.6 1.6 0 0 0 1.4 1.6c-.1.5-.4.9-.9 1.2a.5.5 0 0 0 .3.9c1.5-.2 2.4-1.4 2.4-2.9v-.9a1.6 1.6 0 0 0-1.6-1.6zm6 0a1.6 1.6 0 0 0-1.6 1.6v.1a1.6 1.6 0 0 0 1.4 1.6c-.1.5-.4.9-.9 1.2a.5.5 0 0 0 .3.9c1.5-.2 2.4-1.4 2.4-2.9v-.9a1.6 1.6 0 0 0-1.6-1.6z"/>',
     // 電球
     bulb: '<path d="M12 2a7 7 0 0 1 4.2 12.6c-.7.5-1.2 1.3-1.2 2.2v.2H9v-.2c0-.9-.5-1.7-1.2-2.2A7 7 0 0 1 12 2z"/><rect x="9" y="18.5" width="6" height="1.8" rx=".9"/><rect x="10" y="21" width="4" height="1.8" rx=".9"/>'
   };
@@ -1320,52 +1369,94 @@ select.plain, .combo input {
     }
     return out;
   }
-  let shareSrc = '', shareTags = [], shareSeq = 0;
+  let shareSrc = '', shareTags = [], shareSeq = 0, shareRest = '', lastTweet = '';
   function setShareText(text) {
     shareSrc = text;
     shareTags = extractTags(text);
     $('shareSrc').innerHTML = highlight(text);
+    // 選ぶとどうなるかが分かるよう、実際の並び方で見本を出す（省略せずに全部）
+    const prev = { lines: shareTags.join('\n'), row: shareTags.join(' ') };
     for (const b of document.querySelectorAll('[data-share="lines"], [data-share="row"]')) {
       b.disabled = !shareTags.length;
-      b.querySelector('.share-count').textContent = shareTags.length
-        ? `${shareTags.length}件：${shareTags.join(' ')}`
-        : 'タグが見つかりませんでした';
+      b.querySelector('.share-prev').textContent = !text ? '' : shareTags.length ? prev[b.dataset.share] : 'タグが見つかりませんでした';
     }
+    document.querySelector('[data-share="raw"]').disabled = !text.trim();
   }
-  function setShareNote(msg) { $('shareNote').textContent = msg; $('shareNote').hidden = !msg; }
+  // warn: true のときは赤字（取得できなかった・途中で切れたとき）
+  function setShareNote(msg, warn = false) {
+    const el = $('shareNote');
+    el.textContent = msg; el.hidden = !msg;
+    el.classList.toggle('warn-note', warn);
+  }
 
   // Twitter アプリの「共有」はツイートの URL だけを送ってくるので、
-  // Twitter の埋め込み用 API（oEmbed）でツイートの本文を取ってくる
+  // Twitter 公式の埋め込み用 API（oEmbed）でツイートの本文を取ってくる。
+  // 長いツイートは oEmbed 側で途中までになる（末尾が「…」）。外部サービスは使わず、そのことを知らせる
   const TWEET_URL = /https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/[A-Za-z0-9_]+\/status(?:es)?\/\d+[^\s　]*/;
-  async function fetchTweetText(url) {
+  async function getJSON(url) {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 8000);
     try {
-      const res = await fetch('https://publish.twitter.com/oembed?omit_script=1&lang=ja&url=' + encodeURIComponent(url.split('?')[0]),
-        { signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
-      if (!res.ok) return '';
-      const html = (await res.json()).html || '';
-      const p = new DOMParser().parseFromString(html.replace(/<br\s*\/?>/gi, '\n'), 'text/html').querySelector('blockquote p');
-      return p ? p.textContent.trim() : '';
-    } catch { return ''; }
+      const res = await fetch(url, { signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
+      return res.ok ? await res.json() : null;
+    } catch { return null; }
     finally { clearTimeout(timer); }
   }
+  async function fetchTweetText(url) {
+    const clean = url.split(/[?#]/)[0];
+    const oe = await getJSON('https://publish.twitter.com/oembed?omit_script=1&lang=ja&url=' + encodeURIComponent(clean));
+    if (!oe || !oe.html) return { text: '', cut: false };
+    const p = new DOMParser().parseFromString(oe.html.replace(/<br\s*\/?>/gi, '\n'), 'text/html').querySelector('blockquote p');
+    let text = p ? p.textContent.trim() : '';
+    // 末尾が「… pic.twitter.com/…」などで終わっていたら途中で切れている。切れ目の後ろのリンクは外す
+    const cut = /…\s*(?:(?:pic\.twitter\.com|https?:\/\/)\S*)?\s*$/.test(text);
+    if (cut) text = text.replace(/\s*(?:(?:pic\.twitter\.com|https?:\/\/)\S*)?\s*$/, '');
+    return { text, cut };
+  }
 
-  async function openShare(text) {
+  // URL 欄のツイートを取得して本文に表示する
+  async function loadTweet() {
+    const m = $('twUrl').value.match(TWEET_URL);
+    if (!m) { $('twErr').textContent = 'ツイートのURL（x.com/…/status/…）を入力してください'; return; }
+    $('twErr').textContent = '';
+    lastTweet = m[0];
     const seq = ++shareSeq;
-    setShareText(text);
+    setShareNote('ツイートの本文を取得しています…');
+    const { text: body, cut } = await fetchTweetText(m[0]);
+    if (seq !== shareSeq) return;   // 待っている間に別の URL になった
+    if (!body) { setShareNote('ツイートの本文を取得できませんでした（鍵アカウントや削除されたツイートなど）。', true); return; }
+    setShareText(shareRest ? shareRest + '\n' + body : body);
+    if (cut) setShareNote('長いツイートのため、途中までしか取得できませんでした。足りないタグはパレットの追加画面で書き足してください。', true);
+    else setShareNote('ツイートの本文を取得しました。');
+  }
+  function twImport() { $('twUrl').blur(); loadTweet(); }
+  $('twGo').addEventListener('click', twImport);
+  $('twUrl').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); twImport(); } });
+  // URL を貼り付けたら、ボタンを押さなくても取得する
+  $('twUrl').addEventListener('input', () => {
+    $('twErr').textContent = '';
+    const m = $('twUrl').value.match(TWEET_URL);
+    if (m && m[0] !== lastTweet) loadTweet();
+  });
+
+  // 共有で受け取ったとき（target: new）と、追加・編集画面の「ツイートから引用」（target: editor）
+  let shareTarget = 'new';
+  function openShare(text, target = 'new') {
+    shareSeq++;
+    shareTarget = target;    $('shareFoot').textContent = target === 'editor'
+      ? '選んだ内容は、本文の最後に追加されます。'
+      : '選ぶと、その内容でパレットの追加画面が開きます。';
+    const m = text.match(TWEET_URL);
+    // 送られてきた文の中のツイート URL は URL 欄へ。残りの文は取得した本文の前に付ける
+    shareRest = m ? text.replace(m[0], '').trim() : '';
+    $('twUrl').value = m ? m[0] : '';
+    $('twErr').textContent = '';
+    lastTweet = '';
+    setShareText(m ? shareRest : text);
     setShareNote('');
     openDlg($('shareDlg'));
-    const m = text.match(TWEET_URL);
-    if (!m) return;
-    setShareNote('ツイートの本文を取得しています…');
-    const body = await fetchTweetText(m[0]);
-    if (seq !== shareSeq) return;   // 待っている間に別の共有を受け取った
-    if (!body) { setShareNote('ツイートの本文を取得できませんでした（鍵アカウントや削除されたツイートなど）。'); return; }
-    // 送られてきた URL の部分を、取得した本文に置き換える
-    const rest = text.replace(m[0], '').trim();
-    setShareText(rest ? rest + '\n' + body : body);
-    setShareNote('ツイートの本文を取得しました。');
+    if (m) loadTweet();
+    else if (target === 'editor') $('twUrl').focus();
   }
   $('shareCancel').addEventListener('click', () => closeDlg($('shareDlg')));
   $('shareDlg').addEventListener('click', (e) => {
@@ -1374,12 +1465,22 @@ select.plain, .combo input {
     const mode = b.dataset.share;
     const text = mode === 'lines' ? shareTags.join('\n') : mode === 'row' ? shareTags.join(' ') : shareSrc;
     closeDlg($('shareDlg'));
-    openEditor(-1);
     const ta = $('fText');
-    ta.value = text;
+    if (shareTarget === 'editor') {
+      // 編集中の本文へ：空ならそのまま、何か書いてあれば改行して後ろに足す
+      const cur = ta.value.replace(/\s+$/, '');
+      ta.value = cur ? cur + '\n' + text : text;
+    } else {
+      openEditor(-1);
+      ta.value = text;
+    }
     updatePreview();
-    ta.setSelectionRange(text.length, text.length);
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
   });
+
+  // ---------- 追加・編集画面の「ツイートから引用」 ----------
+  $('twBtn').addEventListener('click', () => openShare('', 'editor'));
 
   applyTheme();
   render();

@@ -20,8 +20,8 @@
 <meta property="og:title" content="タグパレット｜実況のハッシュタグをワンタップで投稿画面へ">
 <meta property="og:description" content="SNSで実況するときなどに、よく使うハッシュタグや定型文をワンタップで呼び出せるコピペ用ツール。">
 <meta property="og:url" content="https://mbs-code.github.io/tag-palette/">
-<!-- 画像を変えたら ?v= の番号も変える（Twitter などが古い画像をキャッシュしているため） -->
-<meta property="og:image" content="https://mbs-code.github.io/tag-palette/ogp.png?v=3">
+<!-- 画像を変えたらファイル名の -v番号 を上げる（Twitter やブラウザが古い画像をキャッシュしているため） -->
+<meta property="og:image" content="https://mbs-code.github.io/tag-palette/ogp-v2.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="タグパレット：パレットの「#番組名 #実況タグ」をタップすると、Twitterの投稿画面にそのまま入る">
@@ -229,6 +229,9 @@ main { padding: 8px 16px calc(env(safe-area-inset-bottom) + 96px); max-width: 64
   white-space: pre-wrap; word-break: break-word;
   align-self: center; }
 .row.pressing { background: var(--press); }
+/* 無効なパレット：グレーにして、タップしても何も起きない（長押し・並べ替えはできる） */
+.row.disabled .body { opacity: .4; filter: grayscale(1); }
+.row.disabled .body .hl { color: var(--sub); }
 .handle { flex: none; width: 64px; display: flex; align-items: center; justify-content: center;
   color: var(--sub); font-size: 20px; touch-action: none; cursor: grab; }
 /* ドラッグ中：持ち上げた行は影付きで指に追従、他の行は滑らかによける */
@@ -445,6 +448,12 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   <div id="cardExtra">
     <div class="section-title">操作</div>
     <div class="group">
+      <div class="item">
+        <div class="switch-row">
+          <label class="name name-row" for="cardEnabled"><span class="ic" data-ic="power"></span>パレットの有効化</label>
+          <span class="switch"><input type="checkbox" id="cardEnabled" role="switch"><span class="track"></span></span>
+        </div>
+      </div>
       <button type="button" id="cardCopy" class="list-btn chev"><span class="ico ic" data-ic="copy"></span>
         <span class="lbl">本文をコピー</span></button>
       <button type="button" id="cardDelete" class="list-btn chev danger"><span class="ico ic" data-ic="trash"></span>
@@ -662,7 +671,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     if (typeof p === 'string') return { text: p.replace(/\s+$/, ''), genre: '' };
     if (!p || typeof p !== 'object') return null;
     const genre = String(p.genre || '').trim();
-    if (typeof p.text === 'string' && p.tags == null) return { text: p.text.replace(/\s+$/, ''), genre, ...dates(p) };
+    if (typeof p.text === 'string' && p.tags == null) return { text: p.text.replace(/\s+$/, ''), genre, ...dates(p), ...(p.disabled === true ? { disabled: true } : {}) };
     // 最初期の形式（表示名・タグ・先頭文）
     const tags = String(p.tags || '').split(/[\s,、　]+/)
       .map(t => t.replace(/^[#＃]+/, '').trim()).filter(Boolean).map(t => '#' + t).join(' ');
@@ -702,7 +711,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       }
       const d = JSON.parse(raw);
       const items = (Array.isArray(d.items) ? d.items : [])
-        .map(i => ({ id: i.id || uid(), text: String(i.text || ''), genre: String(i.genre || ''), ...dates(i) }))
+        .map(i => ({ id: i.id || uid(), text: String(i.text || ''), genre: String(i.genre || ''), ...dates(i), ...(i.disabled === true ? { disabled: true } : {}) }))
         .filter(i => i.text);
       return { items, settings: migrateSettings(d.settings) };
     } catch { return { items: [], settings: migrateSettings({}) }; }
@@ -851,8 +860,6 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   ];
   // 使い方の下に1行あけて添える一文
   const TIPS_FOOT = 'ホーム画面に|追加すれば、|<b>アプリ</b>としても|利用可能です。|手順は|右上の<b class="sym">⚙</b>から。';
-  // OGP 画像の ?v=…（画像を変えたときだけ上げる）。<meta property="og:image"> の1か所で管理し、一覧の画像にも同じものを付ける
-  const OGP_V = (() => { try { return new URL(document.querySelector('meta[property="og:image"]').content).search; } catch { return ''; } })();
   const phrases = (html) => html.split('|').map(x => `<span class="ph">${x}</span>`).join('');
   const tipIcon = (t) => t.ico
     ? `<span class="tip-ico" aria-hidden="true"><svg viewBox="0 0 24 24">${ICONS[t.ico] || ''}</svg></span>`
@@ -871,7 +878,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   function renderTips(list) {
     if (state.settings.aboutTips) {
       list.appendChild(tipCard('aboutTips', 'タグパレットとは', `
-        <img class="tip-ogp" src="ogp.png${OGP_V}" alt="パレットをタップすると、Twitterの投稿画面にそのまま入る様子" width="1200" height="630">
+        <img class="tip-ogp" src="ogp-v2.png" alt="パレットをタップすると、Twitterの投稿画面にそのまま入る様子" width="1200" height="630">
         <div class="tip-lead">${ABOUT_LEAD.map(l => `<p>${phrases(l)}</p>`).join('')}</div>`));
     }
     if (state.settings.tips) {
@@ -916,8 +923,9 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       group.className = 'cards';
       for (const item of items) {
         const el = document.createElement('div');
-        el.className = 'row';
+        el.className = 'row' + (item.disabled ? ' disabled' : '');
         el.dataset.id = item.id;
+        if (item.disabled) el.setAttribute('aria-disabled', 'true');
         el.innerHTML = `<div class="body">${highlight(item.text)}</div>
           <div class="handle" aria-label="ドラッグで並べ替え">≡</div>`;
         setupRow(el, item);
@@ -993,6 +1001,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       e.preventDefault();
       if (longFired || tapBlocked() || moved) return;
       if (downAt && Date.now() - downAt >= LONG_MS) { fireLong(); return; }   // 長く押していた → 長押し扱い
+      if (item.disabled) return;   // 無効なパレットはタップしても何もしない
       onTap(item);
     });
   }
@@ -1159,6 +1168,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     $('fGenre').value = item ? item.genre : (g === ALL ? '' : g);
     $('fErr').textContent = '';
     $('cardExtra').hidden = !item;
+    $('cardEnabled').checked = !(item && item.disabled);
     $('cardUpdated').textContent = fmtDate(item && item.updated);
     closeMenu();
     openDlg($('cardDlg'));
@@ -1213,6 +1223,14 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     } else if (e.key === 'Escape') { e.preventDefault(); closeMenu(); }
   });
 
+  // 有効・無効はその場で切り替えて保存する（コピー・削除と同じく、保存ボタンを待たない）
+  $('cardEnabled').addEventListener('change', (e) => {
+    if (editingIndex < 0) return;
+    const it = state.items[editingIndex];
+    if (e.target.checked) delete it.disabled; else it.disabled = true;
+    save(); render();
+    toast(e.target.checked ? '有効にしました' : '無効にしました', 'ok');
+  });
   $('cardDelete').addEventListener('click', () => {
     if (editingIndex < 0) return;
     if (!confirm('このパレットを削除しますか？')) return;
@@ -1412,6 +1430,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     hash: '<path d="M10 3.5 8 20.5M16 3.5l-2 17M4.5 8.8h16M3.5 15.2h16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
     // 受け取る（トレイに矢印）
     inbox: '<path d="M12 2.5a1.4 1.4 0 0 1 1.4 1.4v6.7l1.9-1.9a1.4 1.4 0 1 1 2 2l-4.3 4.3a1.4 1.4 0 0 1-2 0l-4.3-4.3a1.4 1.4 0 1 1 2-2l1.9 1.9V3.9A1.4 1.4 0 0 1 12 2.5z"/><path d="M3 14.2a1.2 1.2 0 0 1 1.2-1.2h3.1a1 1 0 0 1 .9.6l.7 1.5a1.5 1.5 0 0 0 1.4.9h3.4a1.5 1.5 0 0 0 1.4-.9l.7-1.5a1 1 0 0 1 .9-.6h3.1a1.2 1.2 0 0 1 1.2 1.2V18a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/>',
+    // 電源（有効・無効）
+    power: '<path d="M12 2.5a1.4 1.4 0 0 1 1.4 1.4v7.2a1.4 1.4 0 0 1-2.8 0V3.9A1.4 1.4 0 0 1 12 2.5z"/><path d="M7.1 5.6a1.4 1.4 0 0 1 .3 2A6.3 6.3 0 1 0 16.6 7.6a1.4 1.4 0 1 1 2.2-1.7A9.1 9.1 0 1 1 5.2 5.9a1.4 1.4 0 0 1 1.9-.3z"/>',
     // 引用（吹き出し）
     quote: '<path d="M5 3.5h14A2.5 2.5 0 0 1 21.5 6v9a2.5 2.5 0 0 1-2.5 2.5h-6.2l-4.3 3.3a.8.8 0 0 1-1.3-.6v-2.7H5A2.5 2.5 0 0 1 2.5 15V6A2.5 2.5 0 0 1 5 3.5zm3.2 5.2a1.6 1.6 0 0 0-1.6 1.6v.1a1.6 1.6 0 0 0 1.4 1.6c-.1.5-.4.9-.9 1.2a.5.5 0 0 0 .3.9c1.5-.2 2.4-1.4 2.4-2.9v-.9a1.6 1.6 0 0 0-1.6-1.6zm6 0a1.6 1.6 0 0 0-1.6 1.6v.1a1.6 1.6 0 0 0 1.4 1.6c-.1.5-.4.9-.9 1.2a.5.5 0 0 0 .3.9c1.5-.2 2.4-1.4 2.4-2.9v-.9a1.6 1.6 0 0 0-1.6-1.6z"/>',
     // 電球

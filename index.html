@@ -2,9 +2,31 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<!-- アクセス解析（Google タグマネージャー） -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-5NKGLXFV"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>タグパレット</title>
-<meta name="theme-color" content="#1d9bf0">
+<!-- アプリとして開いたときの上下のバーの色。背景色と同じにして目立たせない（テーマに合わせて JS で切り替え） -->
+<meta name="theme-color" id="themeColor" content="#f2f4f7">
+<meta name="description" content="SNSで実況するときなどに、よく使うハッシュタグや定型文をワンタップで呼び出せるコピペ用ツール。">
+<!-- OGP（Twitter などでリンクを共有したときのカード表示） -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="タグパレット">
+<meta property="og:title" content="タグパレット">
+<meta property="og:description" content="SNSで実況するときなどに、よく使うハッシュタグや定型文をワンタップで呼び出せるコピペ用ツール。">
+<meta property="og:url" content="https://mbs-code.github.io/tag-palette/">
+<meta property="og:image" content="https://mbs-code.github.io/tag-palette/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="タグパレット：実況のハッシュタグをワンタップで">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@_mabasasi_code">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -84,10 +106,25 @@ header {
 header h1 { font-size: 17px; margin: 0; white-space: nowrap; display: flex; align-items: center; gap: 7px; }
 header .logo { width: 26px; height: 26px; border-radius: 7px; flex: none; }
 /* 設定の一番下：アプリ情報（文字だけで表示） */
-.about { margin: 22px 0 2px; text-align: center; font-size: 12px; color: var(--sub); line-height: 1.8; }
-.about img { border-radius: 9px; display: block; margin: 0 auto 4px; }
-.about .about-name { font-size: 14px; font-weight: 700; color: var(--text); }
-.about a { color: var(--accent); text-decoration: none; }
+/* このアプリについて：アイコン＋名前・バージョン／リンク2つ／アクセス解析（折りたたみ） */
+.about { background: var(--sheet-card); border: 1px solid var(--line); border-radius: 14px; font-size: 13px; color: var(--sub); }
+.about-main { display: flex; align-items: center; gap: 12px; padding: 14px; }
+.about-main img { flex: none; border-radius: 11px; }
+.about-name { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; color: var(--text); }
+.about-ver { font-size: 11px; font-weight: 700; color: var(--accent); background: var(--chip); border-radius: 999px; padding: 2px 8px; }
+.about-date { font-size: 12px; margin-top: 2px; }
+.about-links { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
+.about-links a { display: flex; flex-direction: column; gap: 1px; padding: 10px 14px; color: var(--accent); text-decoration: none; font-size: 13px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.about-links a + a { border-left: 1px solid var(--line); }
+.about-links a span { font-size: 11px; font-weight: 400; color: var(--sub); }
+.about-links a:active { background: var(--press); }
+.about-privacy { border-top: 1px solid var(--line); }
+.about-privacy summary { padding: 10px 14px; cursor: pointer; font-size: 12px; list-style: none; display: flex; align-items: center; gap: 6px; }
+.about-privacy summary::-webkit-details-marker { display: none; }
+.about-privacy summary::before { content: '›'; font-size: 16px; line-height: 1; transition: transform .2s; }
+.about-privacy[open] summary::before { transform: rotate(90deg); }
+.about-privacy p { margin: 0; padding: 0 14px 10px; font-size: 12px; line-height: 1.7; }
+.about-privacy a { color: var(--accent); text-decoration: none; }
 header .grow { flex: 1; }
 /* ジャンル切り替えのドロップダウン（ボタンの下にふわっと出る） */
 .genre-menu {
@@ -121,7 +158,8 @@ header .grow { flex: 1; }
 .genre-select[aria-expanded="true"], .genre-select:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .icon-btn { flex: none; border: none; border-radius: 12px; width: 38px; height: 38px;
   display: grid; place-items: center; background: var(--chip); color: var(--accent); transition: transform .3s ease; }
-.icon-btn:active { transform: rotate(45deg) scale(.95); }
+.icon-btn:active { transform: scale(.92); }
+#menuBtn:active { transform: rotate(45deg) scale(.95); }
 .icon-btn .ic { width: 22px; height: 22px; }
 /* 塗りつぶしのSVGアイコン（文字色で描画） */
 .ic { display: inline-grid; place-items: center; flex: none; }
@@ -148,6 +186,11 @@ header .grow { flex: 1; }
 .list-btn.chev::after { content: '›'; color: var(--sub); font-size: 20px; }
 a.list-btn { color: inherit; text-decoration: none; }
 .list-btn.danger, .list-btn.danger .ico { color: var(--danger); }
+.list-btn:disabled { opacity: .45; cursor: default; }
+.list-btn:disabled:active { background: none; }
+/* 読み込みダイアログ：受け取った文（タグ・URL は青字） */
+.share-src { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 30vh; overflow: auto; }
+.head-spacer { visibility: hidden; pointer-events: none; }
 .hint { font-size: 12px; color: var(--sub); margin-top: 6px; line-height: 1.6; }
 .foot-hint { font-size: 12px; color: var(--sub); margin: 6px 4px 0; line-height: 1.6; }
 
@@ -160,7 +203,10 @@ main { padding: 8px 16px calc(env(safe-area-inset-bottom) + 96px); max-width: 64
 /* 一覧は1件ずつ独立したカード */
 .cards { position: relative; display: flex; flex-direction: column; gap: 10px; }
 .row {
-  position: relative; display: flex; align-items: stretch; background: var(--card); cursor: pointer;
+  position: relative; display: flex; align-items: stretch; cursor: pointer;
+  /* うっすら透けるすりガラス風 */
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(1.3); backdrop-filter: blur(12px) saturate(1.3);
   border: 1px solid var(--line); border-radius: 14px;
   user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
@@ -190,8 +236,8 @@ dialog {
   border: 1px solid var(--sheet-edge); border-radius: 18px; padding: 0 0 12px; width: min(94vw, 480px);
   background: var(--sheet); color: var(--text); box-shadow: 0 16px 48px rgba(0,0,0,.4);
   /* キーボードでボタンが隠れないよう、画面上部に表示 */
-  margin: calc(env(safe-area-inset-top) + 16px) auto auto;
-  max-height: calc(100dvh - env(safe-area-inset-top) - 32px); overflow: hidden;
+  margin: calc(env(safe-area-inset-top) + 66px) auto auto;   /* ヘッダー（約58px）の分だけ下げる */
+  max-height: calc(100dvh - env(safe-area-inset-top) - 82px); overflow: hidden;
   /* ふわっと出す・閉じる */
   opacity: 0; transform: translateY(12px) scale(.97);
   transition: opacity .2s ease, transform .2s ease;
@@ -276,7 +322,9 @@ select.plain, .combo input {
 
 /* ---------- チュートリアル（一覧の先頭に表示、×で消せる） ---------- */
 .tip { position: relative; margin: 4px 0 8px; padding: 12px 8px 12px 14px; border-radius: 14px;
-  background: var(--tip); border: 1px solid var(--line); font-size: 14px; line-height: 1.5;
+  background: color-mix(in srgb, var(--tip) 80%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(1.3); backdrop-filter: blur(12px) saturate(1.3);
+  border: 1px solid var(--line); font-size: 14px; line-height: 1.5;
   transition: opacity .2s, transform .2s; }
 .tip.leaving { opacity: 0; transform: translateY(-8px); }
 .tip .tip-head { display: flex; align-items: center; font-weight: 700; font-size: 15px; margin-bottom: 2px; }
@@ -360,11 +408,37 @@ select.plain, .combo input {
     <div class="section-title">操作</div>
     <div class="group">
       <button type="button" id="cardCopy" class="list-btn chev"><span class="ico ic" data-ic="copy"></span>
-        <span class="lbl">この文をコピー</span></button>
+        <span class="lbl">本文をコピー</span></button>
       <button type="button" id="cardDelete" class="list-btn chev danger"><span class="ico ic" data-ic="trash"></span>
         <span class="lbl">このパレットを削除</span></button>
     </div>
   </div>
+  </div>
+</dialog>
+
+<!-- 共有・連携で受け取ったテキストの読み込み -->
+<dialog id="shareDlg">
+  <div class="sheet-head">
+    <button type="button" id="shareCancel" class="text-btn">キャンセル</button>
+    <h2><span class="ic" data-ic="inbox"></span><span>テキストの読み込み</span></h2>
+    <span class="text-btn head-spacer" aria-hidden="true">キャンセル</span>
+  </div>
+  <div class="sheet-body">
+  <div class="section-title first">受け取ったテキスト</div>
+  <div class="group">
+    <div class="item"><div class="share-src" id="shareSrc"></div></div>
+  </div>
+
+  <div class="section-title">パレットにする方法</div>
+  <div class="group">
+    <button type="button" class="list-btn chev" data-share="lines"><span class="ico ic" data-ic="hash"></span>
+      <span class="lbl">タグを抜き出す（改行）<span class="sub share-count"></span></span></button>
+    <button type="button" class="list-btn chev" data-share="row"><span class="ico ic" data-ic="hash"></span>
+      <span class="lbl">タグを抜き出す（並べる）<span class="sub share-count"></span></span></button>
+    <button type="button" class="list-btn chev" data-share="raw"><span class="ico ic" data-ic="paste"></span>
+      <span class="lbl">そのまま貼り付け</span></button>
+  </div>
+  <div class="foot-hint">選ぶと、その内容でパレットの追加画面が開きます。</div>
   </div>
 </dialog>
 
@@ -399,8 +473,7 @@ select.plain, .combo input {
     <div class="item">
       <div class="name name-row"><span class="ic" data-ic="tap"></span>タップしたときの動作</div>
       <select class="plain" id="tapAction" aria-label="タップしたときの動作">
-        <option value="twitter">アプリでTwitterを開く</option>
-        <option value="x">ブラウザでTwitterを開く</option>
+        <option value="twitter">Twitterを開く</option>
         <option value="copy">クリップボードにコピー</option>
       </select>
       <div class="hint" id="tapHint"></div>
@@ -408,7 +481,6 @@ select.plain, .combo input {
     <div class="item">
       <div class="name name-row"><span class="ic" data-ic="folder"></span>起動時に表示するジャンル</div>
       <select class="plain" id="defaultGenre" aria-label="起動時に表示するジャンル"></select>
-      <div class="hint">画面上部のジャンル切り替えとも連動します。</div>
     </div>
     <div class="item">
       <div class="switch-row">
@@ -422,9 +494,9 @@ select.plain, .combo input {
   <div class="section-title">バックアップ（書き出し）</div>
   <div class="group">
     <button type="button" class="list-btn chev" id="exportFile"><span class="ico ic" data-ic="download"></span>
-      <span class="lbl">ファイルに保存<span class="sub">共有シートからファイル・LINE などへ</span></span></button>
+      <span class="lbl">ファイルに保存</span></button>
     <button type="button" class="list-btn chev" id="exportCopy"><span class="ico ic" data-ic="copy"></span>
-      <span class="lbl">テキストとしてコピー<span class="sub">メモ帳などに貼り付けて保管</span></span></button>
+      <span class="lbl">テキストとしてコピー</span></button>
   </div>
 
   <div class="section-title">バックアップ（読み込み）</div>
@@ -434,7 +506,7 @@ select.plain, .combo input {
     <button type="button" class="list-btn chev" id="importTextBtn"><span class="ico ic" data-ic="paste"></span>
       <span class="lbl">テキストを貼り付けて読み込む</span></button>
     <div class="import-box" id="importTextArea" hidden>
-      <textarea id="importText" placeholder="書き出したテキストを貼り付け"></textarea>
+      <textarea id="importText" placeholder="書き出したテキストをここに貼り付け"></textarea>
       <button type="button" id="importTextGo" class="pill-btn">読み込む</button>
     </div>
   </div>
@@ -442,15 +514,28 @@ select.plain, .combo input {
   <div class="section-title">リセット</div>
   <div class="group">
     <button type="button" class="list-btn chev danger" id="resetAll"><span class="ico ic" data-ic="warn"></span>
-      <span class="lbl">初期状態に戻す<span class="sub">すべてのカードと設定を削除します（元に戻せません）</span></span></button>
+      <span class="lbl">初期状態に戻す<span class="sub">すべてのパレットと設定を削除します（元に戻せません）</span></span></button>
   </div>
 
+  <div class="section-title">このアプリについて</div>
   <div class="about">
-    <img src="icon.svg" alt="" width="36" height="36">
-    <div class="about-name">タグパレット</div>
-    <div id="appVersion"></div>
-    <div>Author <a href="https://x.com/_mabasasi_code" target="_blank" rel="noopener noreferrer">@_mabasasi_code</a></div>
-    <div>Powered by <a href="https://claude.ai" target="_blank" rel="noopener noreferrer">Claude</a></div>
+    <div class="about-main">
+      <img src="icon.svg" alt="" width="44" height="44">
+      <div class="about-text">
+        <div class="about-name">タグパレット<span class="about-ver" id="appVer"></span></div>
+        <div class="about-date" id="appDate"></div>
+      </div>
+    </div>
+    <div class="about-links">
+      <a href="https://x.com/_mabasasi_code" target="_blank" rel="noopener noreferrer"><span>Author</span>@_mabasasi_code</a>
+      <a href="https://claude.ai" target="_blank" rel="noopener noreferrer"><span>Powered by</span>Claude</a>
+    </div>
+    <details class="about-privacy">
+      <summary>データの保存とアクセス解析について</summary>
+      <p>パレットや設定などのアプリのデータは、この端末（ブラウザ）の中にだけ保存されます。サーバーに送られることはありません。</p>
+      <p>このサイトでは、利用状況を把握するためにGoogleタグマネージャー（Googleアナリティクス）を使用しています。Cookieを使って匿名のデータを収集しますが、個人を特定する情報は含みません。</p>
+      <p><a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" rel="noopener noreferrer">Googleによるデータの使用について</a></p>
+    </details>
   </div>
   <input type="file" id="importFile" accept=".json,application/json,text/plain" hidden>
   </div>
@@ -471,10 +556,10 @@ select.plain, .combo input {
 
   // ---------- 旧形式 → 新形式 ----------
   function toItem(p) {
-    if (typeof p === 'string') return { text: p.trim(), genre: '' };
+    if (typeof p === 'string') return { text: p.replace(/\s+$/, ''), genre: '' };
     if (!p || typeof p !== 'object') return null;
     const genre = String(p.genre || '').trim();
-    if (typeof p.text === 'string' && p.tags == null) return { text: p.text.trim(), genre };
+    if (typeof p.text === 'string' && p.tags == null) return { text: p.text.replace(/\s+$/, ''), genre };
     // 最初期の形式（表示名・タグ・先頭文）
     const tags = String(p.tags || '').split(/[\s,、　]+/)
       .map(t => t.replace(/^[#＃]+/, '').trim()).filter(Boolean).map(t => '#' + t).join(' ');
@@ -485,14 +570,12 @@ select.plain, .combo input {
   const defaultSettings = { tapAction: 'twitter', genre: ALL, theme: 'auto', tips: true };
   function migrateSettings(s) {
     s = { ...(s || {}) };
-    // 以前の「Xの開き方」設定をタップ動作に引き継ぐ
-    if (!['x', 'twitter', 'copy'].includes(s.tapAction)) {
-      s.tapAction = s.openMode === 'app' ? 'twitter' : s.openMode === 'web' ? 'x' : defaultSettings.tapAction;
-    }
+    // 以前の「アプリで開く」「ブラウザで開く（x）」などは「Twitterを開く」にまとめる
+    if (s.tapAction !== 'copy') s.tapAction = 'twitter';
     s = { ...defaultSettings, ...s };
     if (!['auto', 'light', 'dark'].includes(s.theme)) s.theme = 'auto';
     s.tips = s.tips !== false;
-    delete s.openMode; delete s.openTarget; delete s.tipsDismissed; delete s.trailingSpace;
+    delete s.openMode; delete s.openTarget; delete s.tipsDismissed; delete s.trailingSpace; delete s.bgDim;
     return s;
   }
   function load() {
@@ -507,8 +590,8 @@ select.plain, .combo input {
         }
         // 初回起動：サンプルを2件（どちらも未分類）入れておく
         return { items: [
-          { id: uid(), text: '#アニメ名 #実況', genre: '' },
-          { id: uid(), text: 'こんにちは～！今日もよろしくお願いします #実況', genre: '' }
+          { id: uid(), text: '#アニメ名\n#実況', genre: '' },
+          { id: uid(), text: 'こんにちは～！今日もよろしくお願いします\n#実況', genre: '' }
         ], settings: migrateSettings({}) };
       }
       const d = JSON.parse(raw);
@@ -522,7 +605,7 @@ select.plain, .combo input {
   let state = load();
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch { toast('保存できませんでした（プライベートモード？）', 'err'); }
+    catch { toast('保存できませんでした（プライベートモードでは保存できないことがあります）', 'err'); }
   }
 
   // ---------- ジャンル ----------
@@ -598,8 +681,7 @@ select.plain, .combo input {
     return text;
   }
   // タップしたときの動作
-  //   twitter … twitter:// でアプリを直接開く（開けなければブラウザで開くボタンを出す）
-  //   x       … x.com の投稿画面を別タブで開く
+  //   twitter … x.com の投稿画面を別タブで開く
   //   copy    … クリップボードにコピー
   function openWeb(t) {
     // 別タブで開く（タップ操作の中でリンクを押す形にするとブロックされにくい）
@@ -608,34 +690,10 @@ select.plain, .combo input {
     a.target = '_blank'; a.rel = 'noopener noreferrer';
     document.body.appendChild(a); a.click(); a.remove();
   }
-  function openApp(t) {
-    // アプリが無いとき、ブラウザはコンソールに
-    //   Failed to launch 'twitter://…' because the scheme does not have a registered handler.
-    // と出すだけで、JavaScript には例外もイベントも返さない（try/catch や onerror では捕まえられない）。
-    // そこで「アプリが開けば、この画面は裏に回る（hidden / blur / pagehide）」ことを使い、
-    // 少し待っても画面が残っていれば、起動に失敗したと判断してトーストを出す。
-    let left = false;
-    const mark = () => { left = true; };
-    const onVis = () => { if (document.hidden) left = true; };
-    window.addEventListener('blur', mark);
-    window.addEventListener('pagehide', mark);
-    document.addEventListener('visibilitychange', onVis);
-    window.location.href = 'twitter://post?message=' + encodeURIComponent(t);
-    setTimeout(() => {
-      window.removeEventListener('blur', mark);
-      window.removeEventListener('pagehide', mark);
-      document.removeEventListener('visibilitychange', onVis);
-      if (left || document.hidden) return;
-      toast('Twitterアプリを開けませんでした', 'warn', {
-        action: { label: 'ブラウザで開く', fn: () => openWeb(t) }, duration: 6000
-      });
-    }, 1200);
-  }
   function onTap(text) {
     const t = postText(text);
     const action = state.settings.tapAction;
     if (action === 'copy') { copyText(t, 'コピーしました'); return; }
-    if (action === 'twitter') { openApp(t); return; }
     openWeb(t);
   }
 
@@ -643,13 +701,13 @@ select.plain, .combo input {
   // 「|」で文節を区切る。区切りの位置でだけ改行される（単語の途中で折り返さない）
   const TIPS_LEAD = [
     'SNSで|実況するときなどに、|毎回入力する|ハッシュタグを|ワンタップで|呼び出せる|ツールです。',
-    'よく使う|文章や|定型文を|ためておく、|コピペ帳としても|使えます。'
+    'よく使う|文章や|定型文を|ためておける、|コピペ帳としても|使えます。'
   ];
   const TIPS = [
-    { id: 'add', ico: '+', html: '右下の <b>＋</b> から、|よく使う|タグや文の|カードを|作れます' },
-    { id: 'tap', ico: '↗', html: 'カードを|<b>タップ</b>すると、|その文が|入った状態で|Twitterが開きます' },
-    { id: 'press', ico: '✎', html: 'カードを|<b>長押し</b>で|編集・削除、|右端の <b>≡</b> を|ドラッグで|並べ替えできます' },
-    { id: 'settings', ico: '⚙', html: 'タップしたときの動作や|テーマは、|右上の <b>⚙</b> から|変えられます' }
+    { id: 'add', ico: '+', html: '右下の<b>＋</b>から、|よく使う|タグや文章の|パレット（カード）を|作れます' },
+    { id: 'tap', ico: '↗', html: 'パレットを|<b>タップ</b>すると、|その本文が|入った状態で|Twitterが開きます' },
+    { id: 'press', ico: '✎', html: 'パレットを|<b>長押し</b>で|編集・削除、|右端の<b>≡</b>を|ドラッグして|並べ替えられます' },
+    { id: 'settings', ico: '⚙', html: 'タップしたときの動作や|テーマは、|右上の<b>⚙</b>から|変更できます' }
   ];
   const phrases = (html) => html.split('|').map(x => `<span class="ph">${x}</span>`).join('');
   // 使い方を1枚のカードにまとめて一覧の先頭に出す。× で閉じると設定のチュートリアルがオフになる
@@ -677,8 +735,8 @@ select.plain, .combo input {
     renderTips(list);
     if (!state.items.length) {
       list.insertAdjacentHTML('beforeend', `<div class="empty">
-        まだカードがありません。<br>右下の <b>＋</b> から作ってみましょう。
-        <div class="ex">例）<span class="hl">#アニメ名</span> <span class="hl">#実況</span></div>
+        まだパレットがありません。<br>右下の<b>＋</b>から作ってみましょう。
+        <div class="ex">例：<span class="hl">#アニメ名</span> <span class="hl">#実況</span></div>
       </div>`);
       return;
     }
@@ -921,7 +979,7 @@ select.plain, .combo input {
     // フォーカスしただけのときは全候補、入力したら絞り込み
     const list = typed && v ? all.filter(x => x.toLowerCase().includes(v.toLowerCase())) : all;
     menuOpts = [];
-    if (typed && v && !all.includes(v)) menuOpts.push({ value: v, label: `＋「${v}」を新しく作る`, cls: 'new' });
+    if (typed && v && !all.includes(v)) menuOpts.push({ value: v, label: `＋ 新しいジャンル「${v}」を作る`, cls: 'new' });
     for (const x of list) menuOpts.push({ value: x, label: x, cls: x === v ? 'sel' : '' });
     menuOpts.push({ value: '', label: '未分類', cls: 'muted' + (v === '' ? ' sel' : '') });
     activeIdx = -1;
@@ -959,7 +1017,7 @@ select.plain, .combo input {
     closeDlg($('cardDlg')); toast('削除しました', 'ok');
   });
   $('cardCopy').addEventListener('click', () => {
-    const text = $('fText').value.trim();
+    const text = $('fText').value.replace(/\s+$/, '');
     if (text) copyText(postText(text), 'コピーしました');
   });
   // Xの文字数の数え方に合わせる：全角（日本語など）は2、URLは長さに関係なく23、それ以外は1。上限は280
@@ -993,9 +1051,10 @@ select.plain, .combo input {
   $('addBtn').addEventListener('click', () => openEditor(-1));
   $('cardCancel').addEventListener('click', () => closeDlg($('cardDlg')));
   $('cardSave').addEventListener('click', () => {
-    const text = $('fText').value.trim();
+    const raw = $('fText').value.replace(/\s+$/, '');   // 先頭の空行は残す
+    const text = raw.trim() ? raw : '';
     const genre = $('fGenre').value.trim();
-    if (!text) { $('fErr').textContent = '文を入力してください'; $('fText').focus(); return; }
+    if (!text) { $('fErr').textContent = '本文を入力してください'; $('fText').focus(); return; }
     if (editingIndex >= 0) Object.assign(state.items[editingIndex], { text, genre });
     else state.items.push({ id: uid(), text, genre });
     // 別のジャンルで保存したら、行が消えたように見えないよう表示を切り替える
@@ -1009,15 +1068,19 @@ select.plain, .combo input {
 
   // ---------- 設定 ----------
   const TAP_HINTS = {
-    twitter: 'Twitterアプリを直接開きます。開けなかったときはお知らせを表示します。',
-    x: 'ブラウザでTwitterの投稿画面を別タブで開きます。',
-    copy: 'クリップボードにコピーします。好きなアプリに貼り付けられます。'
+    twitter: 'Twitterの投稿画面を開きます。',
+    copy: 'クリップボードにコピーします。好きなアプリに貼り付けて使えます。'
   };
   function applyTheme() {
     const t = state.settings.theme;
     if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
     else delete document.documentElement.dataset.theme;
+    // アプリ表示時のステータスバー・ナビゲーションバーを背景と同じ色にする
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+    if (bg) $('themeColor').setAttribute('content', bg);
   }
+  // 「自動」のときは端末のライト/ダーク切り替えにも追従する
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
   $('themeSelect').addEventListener('change', (e) => { state.settings.theme = e.target.value; save(); applyTheme(); });
   $('tipsToggle').addEventListener('change', (e) => {
     state.settings.tips = e.target.checked;
@@ -1069,18 +1132,18 @@ select.plain, .combo input {
     const json = exportJSON();
     if (!(await copyText(json, 'コピーしました'))) {
       $('importTextArea').hidden = false; $('importText').value = json;
-      $('importText').select(); toast('自動コピーできないため、表示した文字を手動でコピーしてください', 'warn');
+      $('importText').select(); toast('自動でコピーできませんでした。表示されたテキストを選択してコピーしてください', 'warn');
     }
   });
 
   // ---------- インポート ----------
   function importData(text) {
     let d;
-    try { d = JSON.parse(text); } catch { toast('読み込めません（形式が違います）', 'err'); return; }
+    try { d = JSON.parse(text); } catch { toast('読み込めませんでした（形式が正しくありません）', 'err'); return; }
     const list = Array.isArray(d) ? d : (d.items || d.presets);
-    if (!Array.isArray(list)) { toast('パレットが見つかりません', 'err'); return; }
+    if (!Array.isArray(list)) { toast('パレットが見つかりませんでした', 'err'); return; }
     const incoming = list.map(toItem).filter(i => i && i.text);
-    if (!incoming.length) { toast('有効なパレットがありません', 'err'); return; }
+    if (!incoming.length) { toast('読み込めるパレットがありませんでした', 'err'); return; }
 
     let replace = false;
     if (state.items.length) {
@@ -1104,7 +1167,7 @@ select.plain, .combo input {
     save(); render();
     closeDlg($('menuDlg'));
     const skipped = incoming.length - added;
-    setTimeout(() => toast(`${added}件を読み込みました` + (skipped ? `（重複${skipped}件はスキップ）` : ''), 'ok'), 50);
+    setTimeout(() => toast(`${added}件を読み込みました` + (skipped ? `（重複する${skipped}件は除外）` : ''), 'ok'), 50);
   }
   $('importFileBtn').addEventListener('click', () => $('importFile').click());
   $('importFile').addEventListener('change', async (e) => {
@@ -1136,6 +1199,10 @@ select.plain, .combo input {
     theme: '<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2.2v15.6a7.8 7.8 0 0 0 0-15.6z"/>',
     // フォルダ
     folder: '<path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h3.6a2 2 0 0 1 1.4.6L12.3 6.4h6.2A2.5 2.5 0 0 1 21 8.9v8.6a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/>',
+    // # （タグ）
+    hash: '<path d="M10 3.5 8 20.5M16 3.5l-2 17M4.5 8.8h16M3.5 15.2h16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
+    // 受け取る（トレイに矢印）
+    inbox: '<path d="M12 2.5a1.4 1.4 0 0 1 1.4 1.4v6.7l1.9-1.9a1.4 1.4 0 1 1 2 2l-4.3 4.3a1.4 1.4 0 0 1-2 0l-4.3-4.3a1.4 1.4 0 1 1 2-2l1.9 1.9V3.9A1.4 1.4 0 0 1 12 2.5z"/><path d="M3 14.2a1.2 1.2 0 0 1 1.2-1.2h3.1a1 1 0 0 1 .9.6l.7 1.5a1.5 1.5 0 0 0 1.4.9h3.4a1.5 1.5 0 0 0 1.4-.9l.7-1.5a1 1 0 0 1 .9-.6h3.1a1.2 1.2 0 0 1 1.2 1.2V18a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/>',
     // 電球
     bulb: '<path d="M12 2a7 7 0 0 1 4.2 12.6c-.7.5-1.2 1.3-1.2 2.2v.2H9v-.2c0-.9-.5-1.7-1.2-2.2A7 7 0 0 1 12 2z"/><rect x="9" y="18.5" width="6" height="1.8" rx=".9"/><rect x="10" y="21" width="4" height="1.8" rx=".9"/>'
   };
@@ -1161,11 +1228,12 @@ select.plain, .combo input {
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
-  // バージョン表示は version.js の APP_CACHE（tag-palette-v22）と APP_RELEASED（日付）から作る → 「2026-11-21 v22」
+  // バージョン表示は version.js の APP_CACHE（tag-palette-rev37）と APP_RELEASED（日付）から作る → 「2026-11-21 rev37」
   if (self.APP_CACHE) {
     appVersion = [self.APP_RELEASED, self.APP_CACHE.replace('tag-palette-', '')].filter(Boolean).join(' ');
   }
-  $('appVersion').textContent = appVersion || '（バージョン情報を読み込めませんでした）';
+  $('appVer').textContent = self.APP_CACHE ? self.APP_CACHE.replace('tag-palette-', '') : '';
+  $('appDate').textContent = self.APP_RELEASED ? self.APP_RELEASED + ' 更新' : 'バージョン情報を読み込めませんでした';
 
   // ---------- ホーム画面に追加（PWA） ----------
   // Android / PC の Chrome・Edge は beforeinstallprompt で本物のインストール画面を出せる。
@@ -1174,15 +1242,15 @@ select.plain, .combo input {
   const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const STEPS = {
-    ios: ['<b>Safari</b> でこのページを開く', '画面下の <b>共有ボタン</b>（四角に上矢印）をタップ', '<b>ホーム画面に追加</b> を選んで「追加」'],
-    other: ['<b>Chrome</b> などのブラウザでこのページを開く', '右上の <b>︙</b> メニューを開く', '<b>アプリをインストール</b> または <b>ホーム画面に追加</b> を選ぶ']
+    ios: ['<b>Safari</b>でこのページを開く', '画面下の<b>共有ボタン</b>（四角に上矢印）をタップ', '<b>ホーム画面に追加</b>を選び、<b>追加</b>をタップ'],
+    other: ['<b>Chrome</b>などのブラウザでこのページを開く', '右上の<b>︙</b>（メニュー）を開く', '<b>アプリをインストール</b>または<b>ホーム画面に追加</b>を選ぶ']
   };
   function syncInstall() {
     const btn = $('installBtn'), sub = $('installSub');
     btn.disabled = false;
     if (isStandalone()) { sub.textContent = 'アプリとして起動しています'; btn.disabled = true; $('installHelp').hidden = true; }
     else if (installPrompt) sub.textContent = 'タップするとインストールできます';
-    else sub.textContent = 'アプリのようにホーム画面から開けます（手順を表示）';
+    else sub.textContent = 'ホーム画面からアプリのように開けます（タップで手順を表示）';
   }
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; syncInstall(); });
   window.addEventListener('appinstalled', () => { installPrompt = null; syncInstall(); toast('ホーム画面に追加しました', 'ok'); });
@@ -1215,8 +1283,69 @@ select.plain, .combo input {
   }
   for (const el of document.querySelectorAll('[data-ic]')) setIcon(el, el.dataset.ic);
 
+  // ---------- ほかのアプリからの共有・連携 ----------
+  // Android：ホーム画面に追加したアプリは、共有メニュー（Twitter のツイート共有など）に表示される（manifest の share_target）。
+  // iPhone など：?text=… を付けてこのページを開けば同じように読み込める（ショートカット App などから）。
+  //   例）https://mbs-code.github.io/tag-palette/?text=%23アニメ名%20%23実況
+  const SHARE_KEYS = ['title', 'text', 'url'];
+  function sharedText(params) {
+    const out = [];
+    for (const k of SHARE_KEYS) {
+      const v = (params.get(k) || '').trim();
+      // 同じ内容（本文の中に URL が入っている など）は重ねない
+      if (v && !out.some(x => x.includes(v))) out.push(v);
+    }
+    return out.join('\n');
+  }
+  // 本文から #タグ を順番どおり・重複なしで抜き出す（URL の # や、数字だけのタグは除く）
+  function extractTags(text) {
+    const body = text.replace(/https?:\/\/[^\s　]+/g, ' ');
+    const out = [], seen = new Set();
+    for (const m of body.matchAll(/(^|[^\p{L}\p{N}\p{M}_&\/])[#＃]([\p{L}\p{N}\p{M}_ー・]+)/gu)) {
+      const tag = m[2];
+      if (/^\d+$/.test(tag) || seen.has(tag.toLowerCase())) continue;
+      seen.add(tag.toLowerCase());
+      out.push('#' + tag);
+    }
+    return out;
+  }
+  let shareSrc = '', shareTags = [];
+  function openShare(text) {
+    shareSrc = text;
+    shareTags = extractTags(text);
+    $('shareSrc').innerHTML = highlight(text);
+    for (const b of document.querySelectorAll('[data-share="lines"], [data-share="row"]')) {
+      b.disabled = !shareTags.length;
+      b.querySelector('.share-count').textContent = shareTags.length
+        ? `${shareTags.length}件：${shareTags.join(' ')}`
+        : 'タグが見つかりませんでした';
+    }
+    openDlg($('shareDlg'));
+  }
+  $('shareCancel').addEventListener('click', () => closeDlg($('shareDlg')));
+  $('shareDlg').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-share]');
+    if (!b || b.disabled) return;
+    const mode = b.dataset.share;
+    const text = mode === 'lines' ? shareTags.join('\n') : mode === 'row' ? shareTags.join(' ') : shareSrc;
+    closeDlg($('shareDlg'));
+    openEditor(-1);
+    const ta = $('fText');
+    ta.value = text;
+    updatePreview();
+    ta.setSelectionRange(text.length, text.length);
+  });
+
   applyTheme();
   render();
+
+  // 共有・連携で開かれたときは読み込みダイアログを出す（再読み込みで二重に出ないよう URL から外す）
+  const launch = new URLSearchParams(location.search);
+  if (SHARE_KEYS.some(k => launch.has(k))) {
+    const t = sharedText(launch);
+    history.replaceState(null, '', location.pathname + location.hash);
+    if (t) openShare(t);
+  }
 })();
 </script>
 </body>

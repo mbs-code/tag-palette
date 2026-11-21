@@ -1,7 +1,7 @@
 // バージョン（キャッシュ名）は version.js で管理する。画面の表示と共通
 importScripts('./version.js');
-const CACHE = self.APP_CACHE;   // 例：tag-palette-v22
-const FILES = ['./', './index.html', './version.js', './manifest.json', './sw.js', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png'];
+const CACHE = self.APP_CACHE;   // 例：tag-palette-rev37
+const FILES = ['./', './index.html', './version.js', './manifest.json', './sw.js', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './ogp.png'];
 
 self.addEventListener('install', (e) => {
   // ブラウザのHTTPキャッシュを通さず、必ずサーバーから最新を取る
@@ -20,7 +20,11 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
   e.respondWith(
     fetch(e.request, { cache: 'no-cache' })
-      .then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return res; })
-      .catch(() => caches.match(e.request).then((r) => r || caches.match('./index.html')))
+      .then((res) => {
+        // 共有で開いたとき（?text=… 付き）はキャッシュに溜めない
+        if (res.ok && !new URL(e.request.url).search) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
+        return res;
+      })
+      .catch(() => caches.match(e.request, { ignoreSearch: true }).then((r) => r || caches.match('./index.html')))
   );
 });

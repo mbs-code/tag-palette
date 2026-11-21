@@ -126,7 +126,7 @@ header .logo { width: 26px; height: 26px; border-radius: 7px; flex: none; }
 .about-privacy p { margin: 0; padding: 0 14px 10px; font-size: 12px; line-height: 1.7; }
 .about-privacy a { color: var(--accent); text-decoration: none; }
 header .grow { flex: 1; }
-/* ジャンル切り替えのドロップダウン（ボタンの下にふわっと出る） */
+/* グループ切り替えのドロップダウン（ボタンの下にふわっと出る） */
 .genre-menu {
   position: absolute; top: calc(100% + 6px); left: 0; z-index: 20;
   min-width: 180px; max-width: min(80vw, 320px); max-height: 60vh; overflow-y: auto; padding: 6px;
@@ -289,7 +289,7 @@ select.plain, .combo input {
 .hl-wrap textarea::placeholder { color: var(--sub); -webkit-text-fill-color: var(--sub); }
 .hl-wrap textarea:focus, .combo input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 
-/* ジャンル入力：見た目はセレクト、入力で候補を絞り込み */
+/* グループ入力：見た目はセレクト、入力で候補を絞り込み */
 .combo { position: relative; }
 .combo input::placeholder { color: var(--sub); }
 .combo-menu { margin-top: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--card);
@@ -305,7 +305,9 @@ select.plain, .combo input {
 .list-btn:disabled { opacity: .55; cursor: default; }
 .list-btn:disabled::after { display: none; }
 .install-help { padding: 4px 14px 12px 46px; font-size: 13px; line-height: 1.7; color: var(--sub); }
-.install-help ol { margin: 0; padding-left: 1.2em; }
+.install-help ol { margin: 0 0 8px; padding-left: 1.2em; }
+.install-help ol:last-child { margin-bottom: 0; }
+.install-help .ih-title { font-weight: 700; color: var(--text); margin-top: 2px; }
 .install-help b { color: var(--text); }
 .import-box textarea { min-height: 100px; resize: vertical; }
 .import-box .pill-btn { width: 100%; margin-top: 8px; padding: 10px; }
@@ -360,7 +362,7 @@ select.plain, .combo input {
 <header>
   <h1><img src="icon.svg" alt="" class="logo" width="26" height="26">タグパレット</h1>
   <div class="genre-dd" id="genreDD">
-    <button type="button" class="genre-select" id="genreBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="表示するジャンル"></button>
+    <button type="button" class="genre-select" id="genreBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="表示するグループ"></button>
     <div class="genre-menu" id="genreList" role="listbox"></div>
   </div>
   <span class="grow"></span>
@@ -393,7 +395,7 @@ select.plain, .combo input {
   </div>
   <div class="err" id="fErr"></div>
 
-  <div class="section-title">ジャンル</div>
+  <div class="section-title">グループ</div>
   <div class="group">
     <div class="item">
       <div class="combo">
@@ -428,6 +430,7 @@ select.plain, .combo input {
   <div class="group">
     <div class="item"><div class="share-src" id="shareSrc"></div></div>
   </div>
+  <div class="foot-hint" id="shareNote" hidden></div>
 
   <div class="section-title">パレットにする方法</div>
   <div class="group">
@@ -456,7 +459,18 @@ select.plain, .combo input {
     <button type="button" class="list-btn chev" id="installBtn"><span class="ico ic" data-ic="phone"></span>
       <span class="lbl">ホーム画面に追加<span class="sub" id="installSub"></span></span></button>
     <div class="install-help" id="installHelp" hidden>
-      <ol id="installSteps"></ol>
+      <div class="ih-title">iPhone・iPad（Safari）</div>
+      <ol>
+        <li><b>Safari</b>でこのページを開く</li>
+        <li>画面下の<b>共有ボタン</b>（四角に上矢印）をタップ</li>
+        <li><b>ホーム画面に追加</b>を選び、<b>追加</b>をタップ</li>
+      </ol>
+      <div class="ih-title">Android（Chrome）</div>
+      <ol>
+        <li><b>Chrome</b>でこのページを開く</li>
+        <li>右上の<b>︙</b>（メニュー）をタップ</li>
+        <li><b>ホーム画面に追加</b>または<b>アプリをインストール</b>を選ぶ</li>
+      </ol>
     </div>
   </div>
 
@@ -479,8 +493,8 @@ select.plain, .combo input {
       <div class="hint" id="tapHint"></div>
     </div>
     <div class="item">
-      <div class="name name-row"><span class="ic" data-ic="folder"></span>起動時に表示するジャンル</div>
-      <select class="plain" id="defaultGenre" aria-label="起動時に表示するジャンル"></select>
+      <div class="name name-row"><span class="ic" data-ic="folder"></span>起動時に表示するグループ</div>
+      <select class="plain" id="defaultGenre" aria-label="起動時に表示するグループ"></select>
     </div>
     <div class="item">
       <div class="switch-row">
@@ -533,6 +547,7 @@ select.plain, .combo input {
     <details class="about-privacy">
       <summary>データの保存とアクセス解析について</summary>
       <p>パレットや設定などのアプリのデータは、この端末（ブラウザ）の中にだけ保存されます。サーバーに送られることはありません。</p>
+      <p>Twitterのツイートを共有して読み込んだときは、本文を取得するためにそのツイートのURLをTwitter（X）に送ります。</p>
       <p>このサイトでは、利用状況を把握するためにGoogleタグマネージャー（Googleアナリティクス）を使用しています。Cookieを使って匿名のデータを収集しますが、個人を特定する情報は含みません。</p>
       <p><a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" rel="noopener noreferrer">Googleによるデータの使用について</a></p>
     </details>
@@ -608,8 +623,8 @@ select.plain, .combo input {
     catch { toast('保存できませんでした（プライベートモードでは保存できないことがあります）', 'err'); }
   }
 
-  // ---------- ジャンル ----------
-  // ジャンル一覧（名前の降順）。ヘッダーの切り替え・「すべて」の見出し・候補一覧で共通
+  // ---------- グループ ----------
+  // グループ一覧（名前の降順）。ヘッダーの切り替え・「すべて」の見出し・候補一覧で共通
   function genres() {
     const seen = [];
     for (const i of state.items) if (i.genre && !seen.includes(i.genre)) seen.push(i.genre);
@@ -620,7 +635,7 @@ select.plain, .combo input {
     const g = state.settings.genre;
     if (g === ALL) return ALL;
     if (g === '' ? hasUncategorized() : genres().includes(g)) return g;
-    return ALL; // そのジャンルが無くなっていたら「すべて」に戻す
+    return ALL; // そのグループが無くなっていたら「すべて」に戻す
   }
   const genreLabel = (g) => g === ALL ? 'すべて' : (g === '' ? '未分類' : g);
   function genreOptions() {
@@ -639,7 +654,7 @@ select.plain, .combo input {
     }
   }
   function setGenre(g) { state.settings.genre = g; save(); render(); }
-  // ---------- ヘッダーのジャンル切り替え（ドロップダウン） ----------
+  // ---------- ヘッダーのグループ切り替え（ドロップダウン） ----------
   // タップ（クリック）で開閉する。メニューの外を押す・Esc でも閉じる。
   let ddTimer = 0;
   function renderGenreDD() {
@@ -707,7 +722,8 @@ select.plain, .combo input {
     { id: 'add', ico: '+', html: '右下の<b>＋</b>から、|よく使う|タグや文章の|パレット（カード）を|作れます' },
     { id: 'tap', ico: '↗', html: 'パレットを|<b>タップ</b>すると、|その本文が|入った状態で|Twitterが開きます' },
     { id: 'press', ico: '✎', html: 'パレットを|<b>長押し</b>で|編集・削除、|右端の<b>≡</b>を|ドラッグして|並べ替えられます' },
-    { id: 'settings', ico: '⚙', html: 'タップしたときの動作や|テーマは、|右上の<b>⚙</b>から|変更できます' }
+    { id: 'settings', ico: '⚙', html: 'タップしたときの動作や|テーマは、|右上の<b>⚙</b>から|変更できます' },
+    { id: 'install', ico: '⌂', html: 'アプリとして|使いたいときは、|右上の<b>⚙</b>の|<b>ホーム画面に追加</b>を|見てください' }
   ];
   const phrases = (html) => html.split('|').map(x => `<span class="ph">${x}</span>`).join('');
   // 使い方を1枚のカードにまとめて一覧の先頭に出す。× で閉じると設定のチュートリアルがオフになる
@@ -740,11 +756,11 @@ select.plain, .combo input {
       </div>`);
       return;
     }
-    // 「すべて」はジャンルごとにグループ分けして表示
+    // 「すべて」はグループごとにグループ分けして表示
     const sections = g === ALL
       ? [...genres(), ...(hasUncategorized() ? [''] : [])].map(x => [x, state.items.filter(i => i.genre === x)])
       : [[g, state.items.filter(i => i.genre === g)]];
-    // ジャンル名の見出しは常に表示する（全部が同じジャンル・未分類のときや、ジャンルで絞り込んだときも）
+    // グループ名の見出しは常に表示する（全部が同じグループ・未分類のときや、グループで絞り込んだときも）
     const showTitles = true;
     sections.forEach(([name, items], n) => {
       if (!items.length) return;
@@ -823,7 +839,7 @@ select.plain, .combo input {
 
   // ---------- ドラッグで並べ替え（右端の ≡） ----------
   // 持ち上げた行は指に追従し、他の行は FLIP アニメーションで滑らかによける。
-  // 並べ替えは同じグループ（ジャンル）の中だけ。
+  // 並べ替えは同じグループ（グループ）の中だけ。
   function setupDrag(handle, row) {
     let active = false, startPageY = 0, startTop = 0, lastClientY = 0, raf = 0, group = null;
     handle.addEventListener('pointerdown', (e) => {
@@ -958,7 +974,7 @@ select.plain, .combo input {
     $('cardDlgTitle').textContent = item ? 'パレットを編集' : 'パレットを追加';
     setIcon($('cardDlgIcon'), item ? 'edit' : 'add');
     $('fText').value = item ? item.text : '';
-    // 新規は、いま表示しているジャンルを最初から入れておく
+    // 新規は、いま表示しているグループを最初から入れておく
     $('fGenre').value = item ? item.genre : (g === ALL ? '' : g);
     $('fErr').textContent = '';
     $('cardExtra').hidden = !item;
@@ -970,7 +986,7 @@ select.plain, .combo input {
     ta.setSelectionRange(ta.value.length, ta.value.length);
   }
 
-  // ---------- ジャンル入力（コンボボックス） ----------
+  // ---------- グループ入力（コンボボックス） ----------
   const gInput = $('fGenre'), gMenu = $('genreMenu');
   let menuOpts = [], activeIdx = -1, typed = false;
   function buildMenu() {
@@ -979,7 +995,7 @@ select.plain, .combo input {
     // フォーカスしただけのときは全候補、入力したら絞り込み
     const list = typed && v ? all.filter(x => x.toLowerCase().includes(v.toLowerCase())) : all;
     menuOpts = [];
-    if (typed && v && !all.includes(v)) menuOpts.push({ value: v, label: `＋ 新しいジャンル「${v}」を作る`, cls: 'new' });
+    if (typed && v && !all.includes(v)) menuOpts.push({ value: v, label: `＋ 新しいグループ「${v}」を作る`, cls: 'new' });
     for (const x of list) menuOpts.push({ value: x, label: x, cls: x === v ? 'sel' : '' });
     menuOpts.push({ value: '', label: '未分類', cls: 'muted' + (v === '' ? ' sel' : '') });
     activeIdx = -1;
@@ -1057,7 +1073,7 @@ select.plain, .combo input {
     if (!text) { $('fErr').textContent = '本文を入力してください'; $('fText').focus(); return; }
     if (editingIndex >= 0) Object.assign(state.items[editingIndex], { text, genre });
     else state.items.push({ id: uid(), text, genre });
-    // 別のジャンルで保存したら、行が消えたように見えないよう表示を切り替える
+    // 別のグループで保存したら、行が消えたように見えないよう表示を切り替える
     const g = currentGenre();
     if (g !== ALL && g !== genre) state.settings.genre = genre;
     save(); render();
@@ -1240,11 +1256,6 @@ select.plain, .combo input {
   // iPhone / iPad の Safari にはその仕組みが無いので、手順を表示する。
   let installPrompt = null;
   const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const STEPS = {
-    ios: ['<b>Safari</b>でこのページを開く', '画面下の<b>共有ボタン</b>（四角に上矢印）をタップ', '<b>ホーム画面に追加</b>を選び、<b>追加</b>をタップ'],
-    other: ['<b>Chrome</b>などのブラウザでこのページを開く', '右上の<b>︙</b>（メニュー）を開く', '<b>アプリをインストール</b>または<b>ホーム画面に追加</b>を選ぶ']
-  };
   function syncInstall() {
     const btn = $('installBtn'), sub = $('installSub');
     btn.disabled = false;
@@ -1255,22 +1266,22 @@ select.plain, .combo input {
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; syncInstall(); });
   window.addEventListener('appinstalled', () => { installPrompt = null; syncInstall(); toast('ホーム画面に追加しました', 'ok'); });
   $('installBtn').addEventListener('click', async () => {
+    // インストール画面を出せるブラウザ（Android・PC の Chrome / Edge）はそのまま出す。
+    // 出せない環境では、Safari と Chrome の手順を表示する
     if (installPrompt) {
       installPrompt.prompt();
       try { await installPrompt.userChoice; } catch {}
       installPrompt = null; syncInstall();
       return;
     }
-    const box = $('installHelp');
-    $('installSteps').innerHTML = (isIOS ? STEPS.ios : STEPS.other).map(x => `<li>${x}</li>`).join('');
-    box.hidden = !box.hidden;
+    $('installHelp').hidden = !$('installHelp').hidden;
   });
   syncInstall();
 
   // ---------- 初期状態に戻す ----------
   $('resetAll').addEventListener('click', () => {
     const ok = confirm('⚠ 初期状態に戻します\n\n'
-      + 'すべてのパレット・ジャンル・設定が削除され、元に戻せません。\n'
+      + 'すべてのパレット・グループ・設定が削除され、元に戻せません。\n'
       + '残したい場合は、先に「バックアップ（書き出し）」で保存してください。\n\n'
       + '本当に初期状態に戻しますか？');
     if (!ok) return;
@@ -1309,8 +1320,8 @@ select.plain, .combo input {
     }
     return out;
   }
-  let shareSrc = '', shareTags = [];
-  function openShare(text) {
+  let shareSrc = '', shareTags = [], shareSeq = 0;
+  function setShareText(text) {
     shareSrc = text;
     shareTags = extractTags(text);
     $('shareSrc').innerHTML = highlight(text);
@@ -1320,7 +1331,41 @@ select.plain, .combo input {
         ? `${shareTags.length}件：${shareTags.join(' ')}`
         : 'タグが見つかりませんでした';
     }
+  }
+  function setShareNote(msg) { $('shareNote').textContent = msg; $('shareNote').hidden = !msg; }
+
+  // Twitter アプリの「共有」はツイートの URL だけを送ってくるので、
+  // Twitter の埋め込み用 API（oEmbed）でツイートの本文を取ってくる
+  const TWEET_URL = /https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/[A-Za-z0-9_]+\/status(?:es)?\/\d+[^\s　]*/;
+  async function fetchTweetText(url) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 8000);
+    try {
+      const res = await fetch('https://publish.twitter.com/oembed?omit_script=1&lang=ja&url=' + encodeURIComponent(url.split('?')[0]),
+        { signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
+      if (!res.ok) return '';
+      const html = (await res.json()).html || '';
+      const p = new DOMParser().parseFromString(html.replace(/<br\s*\/?>/gi, '\n'), 'text/html').querySelector('blockquote p');
+      return p ? p.textContent.trim() : '';
+    } catch { return ''; }
+    finally { clearTimeout(timer); }
+  }
+
+  async function openShare(text) {
+    const seq = ++shareSeq;
+    setShareText(text);
+    setShareNote('');
     openDlg($('shareDlg'));
+    const m = text.match(TWEET_URL);
+    if (!m) return;
+    setShareNote('ツイートの本文を取得しています…');
+    const body = await fetchTweetText(m[0]);
+    if (seq !== shareSeq) return;   // 待っている間に別の共有を受け取った
+    if (!body) { setShareNote('ツイートの本文を取得できませんでした（鍵アカウントや削除されたツイートなど）。'); return; }
+    // 送られてきた URL の部分を、取得した本文に置き換える
+    const rest = text.replace(m[0], '').trim();
+    setShareText(rest ? rest + '\n' + body : body);
+    setShareNote('ツイートの本文を取得しました。');
   }
   $('shareCancel').addEventListener('click', () => closeDlg($('shareDlg')));
   $('shareDlg').addEventListener('click', (e) => {

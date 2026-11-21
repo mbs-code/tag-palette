@@ -17,13 +17,14 @@
 <!-- OGP（Twitter などでリンクを共有したときのカード表示） -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="タグパレット">
-<meta property="og:title" content="タグパレット">
+<meta property="og:title" content="タグパレット｜実況のハッシュタグをワンタップで投稿画面へ">
 <meta property="og:description" content="SNSで実況するときなどに、よく使うハッシュタグや定型文をワンタップで呼び出せるコピペ用ツール。">
 <meta property="og:url" content="https://mbs-code.github.io/tag-palette/">
-<meta property="og:image" content="https://mbs-code.github.io/tag-palette/ogp.png">
+<!-- 画像を変えたら ?v= の番号も変える（Twitter などが古い画像をキャッシュしているため） -->
+<meta property="og:image" content="https://mbs-code.github.io/tag-palette/ogp.png?v=3">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="タグパレット：実況のハッシュタグをワンタップで">
+<meta property="og:image:alt" content="タグパレット：パレットの「#番組名 #実況タグ」をタップすると、Twitterの投稿画面にそのまま入る">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@_mabasasi_code">
@@ -193,13 +194,10 @@ a.list-btn { color: inherit; text-decoration: none; }
 .list-btn:disabled .share-prev { color: var(--sub) !important; }
 .foot-hint.warn-note { color: var(--danger); }
 /* 追加・編集画面の一番下：作成日・更新日 */
-.card-dates { display: flex; flex-wrap: wrap; gap: 2px 18px; margin: 8px 4px 2px; font-size: 12px; color: var(--sub); }
-.card-dates div { display: flex; gap: 6px; }
-.card-dates dt { font-weight: 700; }
-.card-dates dd { margin: 0; font-variant-numeric: tabular-nums; }
+/* 見出し「更新日」の横に、もっと薄い灰色で日時 */
+.card-date { margin-left: 10px; font-weight: 400; color: var(--sub); opacity: .65; font-variant-numeric: tabular-nums; }
 .tw-tip { margin: 0 0 4px; }
-.tw-tip .tip-head { min-height: 28px; margin-bottom: 6px; }
-.tw-tip .tip-ico svg { width: 16px; height: 16px; }
+.tw-tip .tip-head { margin-bottom: 4px; }
 .share-src { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 30vh; overflow: auto; }
 .head-spacer { visibility: hidden; pointer-events: none; }
 .hint { font-size: 12px; color: var(--sub); margin-top: 6px; line-height: 1.6; }
@@ -208,9 +206,12 @@ a.list-btn { color: inherit; text-decoration: none; }
 /* ---------- 一覧 ---------- */
 main { padding: 8px 16px calc(env(safe-area-inset-bottom) + 96px); max-width: 640px; margin: 0 auto; }
 .empty { text-align: center; color: var(--sub); padding: 40px 8px; line-height: 1.9; font-size: 15px; }
-.empty b { color: var(--text); }
-.empty .ex { display: inline-block; margin-top: 12px; padding: 10px 14px; border: 1px dashed var(--line);
-  border-radius: 12px; text-align: left; }
+.empty p { margin: 0; }
+.empty b { color: var(--accent); }
+/* 例は文の下に別の行で、左寄せの小さな枠に */
+.empty .ex { display: block; width: fit-content; margin: 16px auto 0; padding: 10px 18px; border: 1px dashed var(--line);
+  border-radius: 12px; text-align: left; line-height: 1.6; }
+.empty .ex-label { font-size: 12px; color: var(--sub); margin-right: 10px; }
 /* 一覧は1件ずつ独立したカード */
 .cards { position: relative; display: flex; flex-direction: column; gap: 10px; }
 .row {
@@ -349,7 +350,15 @@ select.plain, .combo input {
   transition: opacity .2s, transform .2s; }
 .tip.leaving { opacity: 0; transform: translateY(-8px); }
 .tip .tip-head { display: flex; align-items: center; font-weight: 700; font-size: 15px; margin-bottom: 2px; }
-.tip .tip-lead { color: var(--sub); font-size: 13px; margin: 0 6px 10px 0; }
+.tip .tip-lead { color: var(--sub); font-size: 13px; margin: 0 6px 0 0; }
+.tip .tip-ogp + .tip-lead { color: var(--text); font-size: 14px; }
+.tip .tip-ogp { display: block; width: calc(100% - 6px); height: auto; border-radius: 10px; margin: 4px 0 10px; }
+.tip .tip-ico svg { width: 16px; height: 16px; fill: currentColor; }
+/* 文中の強調（タップ・＋・⚙ など）は前後の文字とくっつかないよう少し間をあける */
+.tip b, b.sym { padding: 0 3px; }
+/* 長押し中（指を離すまで）は文字を選択させない */
+body.no-select, body.no-select * { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; }
+.tip .tip-foot { margin: 14px 6px 0 0; font-size: 13px; color: var(--sub); }
 .tip .tip-lead p { margin: 0; }
 .tip .tip-lead p + p { margin-top: 4px; }
 /* 文節ごとのまとまり。この中では改行せず、まとまりの間でだけ折り返す */
@@ -413,7 +422,7 @@ select.plain, .combo input {
     <div class="item">
       <div class="hl-wrap">
         <div class="hl-back" id="fBack" aria-hidden="true"></div>
-        <textarea id="fText" autofocus placeholder="例：#アニメ名 #実況" autocapitalize="off" spellcheck="false"></textarea>
+        <textarea id="fText" autofocus placeholder="例：#番組名 #実況タグ" autocapitalize="off" spellcheck="false"></textarea>
       </div>
     </div>
   </div>
@@ -438,9 +447,7 @@ select.plain, .combo input {
       <button type="button" id="cardDelete" class="list-btn chev danger"><span class="ico ic" data-ic="trash"></span>
         <span class="lbl">このパレットを削除</span></button>
     </div>
-    <dl class="card-dates">
-      <div><dt>更新日</dt><dd id="cardUpdated"></dd></div>
-    </dl>
+    <div class="section-title">更新日<span class="card-date" id="cardUpdated"></span></div>
   </div>
   </div>
 </dialog>
@@ -453,12 +460,13 @@ select.plain, .combo input {
     <span class="text-btn head-spacer" aria-hidden="true">キャンセル</span>
   </div>
   <div class="sheet-body">
-  <!-- 使い方（一覧の「使い方」と同じ見た目。閉じるボタンなし） -->
-  <div class="tip tw-tip">
-    <div class="tip-head"><span>使い方</span></div>
+  <!-- 使い方（一覧の「使い方」と同じ見た目。× で閉じると次からは出さない） -->
+  <div class="tip tw-tip" id="twTip">
+    <div class="tip-head"><span>使い方</span>
+      <button type="button" class="tip-close" id="twTipClose" aria-label="使い方を閉じる">×</button></div>
     <ul>
       <li><span class="tip-ico ic" data-ic="copy" aria-hidden="true"></span><span><span class="ph"><b>iPhone</b>：</span><span class="ph">Twitterアプリで</span><span class="ph">ツイートの</span><span class="ph"><b>共有</b>から</span><span class="ph"><b>リンクをコピー</b>して、</span><span class="ph">下の</span><span class="ph">URL欄に</span><span class="ph">貼り付けます</span></span></li>
-      <li><span class="tip-ico ic" data-ic="inbox" aria-hidden="true"></span><span><span class="ph"><b>Android</b>：</span><span class="ph">Twitterアプリで</span><span class="ph">ツイートの</span><span class="ph"><b>共有</b>から</span><span class="ph"><b>タグパレット</b>を</span><span class="ph">選ぶと、</span><span class="ph">この画面が</span><span class="ph">開きます</span></span></li>
+      <li><span class="tip-ico ic" data-ic="inbox" aria-hidden="true"></span><span><span class="ph"><b>Android</b>：</span><span class="ph">このアプリを</span><span class="ph"><b>ホーム画面に追加</b>しておくと、</span><span class="ph">Twitterアプリで</span><span class="ph">ツイートの</span><span class="ph"><b>共有</b>から</span><span class="ph"><b>タグパレット</b>を</span><span class="ph">選ぶと、</span><span class="ph">この画面が</span><span class="ph">開きます</span></span></li>
     </ul>
   </div>
   <div class="section-title">ツイートのURL</div>
@@ -542,13 +550,6 @@ select.plain, .combo input {
       <div class="name name-row"><span class="ic" data-ic="folder"></span>起動時に表示するグループ</div>
       <select class="plain" id="defaultGenre" aria-label="起動時に表示するグループ"></select>
     </div>
-    <div class="item">
-      <div class="switch-row">
-        <label class="name name-row" for="tipsToggle"><span class="ic" data-ic="bulb"></span>チュートリアルを表示</label>
-        <span class="switch"><input type="checkbox" id="tipsToggle" role="switch"><span class="track"></span></span>
-      </div>
-      <div class="hint">一覧の先頭に「使い方」を表示します。</div>
-    </div>
   </div>
 
   <div class="section-title">バックアップ（書き出し）</div>
@@ -573,6 +574,8 @@ select.plain, .combo input {
 
   <div class="section-title">リセット</div>
   <div class="group">
+    <button type="button" class="list-btn chev" id="tipsReset"><span class="ico ic" data-ic="bulb"></span>
+      <span class="lbl">使い方をもう一度表示<span class="sub">×で閉じた「使い方」を元に戻します</span></span></button>
     <button type="button" class="list-btn chev danger" id="resetAll"><span class="ico ic" data-ic="warn"></span>
       <span class="lbl">初期状態に戻す<span class="sub">すべてのパレットと設定を削除します（元に戻せません）</span></span></button>
   </div>
@@ -618,10 +621,13 @@ select.plain, .combo input {
   // ---------- 旧形式 → 新形式 ----------
   // 作成日・更新日（ISO 形式の文字列）。正しい日時のときだけ残す
   const validDate = (v) => (typeof v === 'string' && !isNaN(Date.parse(v))) ? v : undefined;
+  // created（作成）・updated（更新）・used（最後に使った日時）・uses（使った回数）
   const dates = (p) => {
-    const o = {}, c = validDate(p.created), u = validDate(p.updated);
+    const o = {}, c = validDate(p.created), u = validDate(p.updated), us = validDate(p.used);
     if (c) o.created = c;
     if (u) o.updated = u;
+    if (us) o.used = us;
+    if (Number.isInteger(p.uses) && p.uses > 0) o.uses = p.uses;
     return o;
   };
   function toItem(p) {
@@ -636,7 +642,7 @@ select.plain, .combo input {
   }
 
   // ---------- 保存まわり ----------
-  const defaultSettings = { tapAction: 'twitter', genre: ALL, theme: 'auto', tips: true };
+  const defaultSettings = { tapAction: 'twitter', genre: ALL, theme: 'auto', tips: true, aboutTips: true, quoteTips: true };
   function migrateSettings(s) {
     s = { ...(s || {}) };
     // 以前の「アプリで開く」「ブラウザで開く（x）」などは「Twitterを開く」にまとめる
@@ -644,6 +650,8 @@ select.plain, .combo input {
     s = { ...defaultSettings, ...s };
     if (!['auto', 'light', 'dark'].includes(s.theme)) s.theme = 'auto';
     s.tips = s.tips !== false;
+    s.quoteTips = s.quoteTips !== false;
+    s.aboutTips = s.aboutTips !== false;
     delete s.openMode; delete s.openTarget; delete s.tipsDismissed; delete s.trailingSpace; delete s.bgDim;
     return s;
   }
@@ -660,8 +668,8 @@ select.plain, .combo input {
         // 初回起動：サンプルを2件（どちらも未分類）入れておく
         const now = new Date().toISOString();
         return { items: [
-          { id: uid(), text: '#アニメ名\n#実況', genre: '', created: now, updated: now },
-          { id: uid(), text: 'こんにちは～！今日もよろしくお願いします\n#実況', genre: '', created: now, updated: now }
+          { id: uid(), text: '#番組名\n#実況タグ', genre: '', created: now, updated: now },
+          { id: uid(), text: 'こんにちは～！今日もよろしくお願いします\n#実況タグ', genre: '', created: now, updated: now }
         ], settings: migrateSettings({}) };
       }
       const d = JSON.parse(raw);
@@ -760,6 +768,14 @@ select.plain, .combo input {
     a.target = '_blank'; a.rel = 'noopener noreferrer';
     document.body.appendChild(a); a.click(); a.remove();
   }
+  // 使った記録（タップしたとき）。今は画面に出さず、データとしてだけ持つ
+  function recordUse(id) {
+    const it = state.items.find(i => i.id === id);
+    if (!it) return;
+    it.used = new Date().toISOString();
+    it.uses = (it.uses || 0) + 1;
+    save();
+  }
   function onTap(text) {
     const t = postText(text);
     const action = state.settings.tapAction;
@@ -768,33 +784,50 @@ select.plain, .combo input {
   }
 
   // ---------- チュートリアル ----------
+  // 一覧の先頭に2枚のカードを出す。それぞれ × で閉じると、そのカードだけ次から出なくなる
+  //   about … タグパレットとは（OGP 画像つき）
+  //   tips  … 使い方（初めての人が迷わないよう、操作の順に並べる）
   // 「|」で文節を区切る。区切りの位置でだけ改行される（単語の途中で折り返さない）
-  const TIPS_LEAD = [
-    'SNSで|実況するときなどに、|毎回入力する|ハッシュタグを|ワンタップで|呼び出せる|ツールです。',
-    'よく使う|文章や|定型文を|ためておける、|コピペ帳としても|使えます。'
+  const ABOUT_LEAD = [
+    '毎回打つ|実況タグや|よく使う文章を、|<b>パレット</b>（カード）で|管理する|アプリです。',
+    'パレットを|タップするだけで、|Twitterの|投稿画面が|開きます。'
   ];
+  // ico は画面のボタンと同じアイコン（ICONS の名前）。text を指定すると文字のアイコンになる
+  // 1項目2行までに収まる文で（です・ます調。「！」はタップとアプリだけ）
   const TIPS = [
-    { id: 'add', ico: '+', html: '右下の<b>＋</b>から、|よく使う|タグや文章の|パレット（カード）を|作れます' },
-    { id: 'tap', ico: '↗', html: 'パレットを|<b>タップ</b>すると、|その本文が|入った状態で|Twitterが開きます' },
-    { id: 'press', ico: '✎', html: 'パレットを|<b>長押し</b>で|編集・削除、|右端の<b>≡</b>を|ドラッグして|並べ替えられます' },
-    { id: 'settings', ico: '⚙', html: 'タップしたときの動作や|テーマは、|右上の<b>⚙</b>から|変更できます' },
-    { id: 'install', ico: '⌂', html: 'アプリとして|使いたいときは、|右上の<b>⚙</b>の|<b>ホーム画面に追加</b>を|見てください' }
+    { ico: 'tap', html: 'まずは|用意された|パレットを|<b>タップ</b>！|そのまま|Twitterに|投稿できます！' },
+    { ico: 'edit', html: 'パレットを|<b>長押し</b>すると、|内容の|編集や|削除が|可能です。' },
+    { ico: 'plus', html: '新しい|パレットは、|右下の<b class="sym">＋</b>から！' },
+    { ico: 'gear', html: '設定や|バックアップは、|右上の<b class="sym">⚙</b>から！' }
   ];
+  // 使い方の下に1行あけて添える一文
+  const TIPS_FOOT = 'ホーム画面に|追加すれば、|<b>アプリ</b>としても|利用可能です。|手順は|右上の<b class="sym">⚙</b>から。';
   const phrases = (html) => html.split('|').map(x => `<span class="ph">${x}</span>`).join('');
-  // 使い方を1枚のカードにまとめて一覧の先頭に出す。× で閉じると設定のチュートリアルがオフになる
-  function renderTips(list) {
-    if (!state.settings.tips) return;
+  const tipIcon = (t) => t.ico
+    ? `<span class="tip-ico" aria-hidden="true"><svg viewBox="0 0 24 24">${ICONS[t.ico] || ''}</svg></span>`
+    : `<span class="tip-ico" aria-hidden="true">${t.text}</span>`;
+  function tipCard(key, title, body) {
     const el = document.createElement('div');
     el.className = 'tip';
-    el.innerHTML = `<div class="tip-head"><span>使い方</span>
-        <button type="button" class="tip-close" aria-label="使い方を閉じる">×</button></div>
-      <div class="tip-lead">${TIPS_LEAD.map(l => `<p>${phrases(l)}</p>`).join('')}</div>
-      <ul>${TIPS.map(t => `<li><span class="tip-ico" aria-hidden="true">${t.ico}</span><span>${phrases(t.html)}</span></li>`).join('')}</ul>`;
+    el.innerHTML = `<div class="tip-head"><span>${title}</span>
+        <button type="button" class="tip-close" aria-label="${title}を閉じる">×</button></div>${body}`;
     el.querySelector('.tip-close').addEventListener('click', () => {
       el.classList.add('leaving');
-      setTimeout(() => { state.settings.tips = false; save(); render(); }, 200);
+      setTimeout(() => { state.settings[key] = false; save(); render(); }, 200);
     });
-    list.appendChild(el);
+    return el;
+  }
+  function renderTips(list) {
+    if (state.settings.aboutTips) {
+      list.appendChild(tipCard('aboutTips', 'タグパレットとは', `
+        <img class="tip-ogp" src="ogp.png" alt="パレットをタップすると、Twitterの投稿画面にそのまま入る様子" width="1200" height="630">
+        <div class="tip-lead">${ABOUT_LEAD.map(l => `<p>${phrases(l)}</p>`).join('')}</div>`));
+    }
+    if (state.settings.tips) {
+      list.appendChild(tipCard('tips', '使い方', `
+        <ul>${TIPS.map(t => `<li>${tipIcon(t)}<span>${phrases(t.html)}</span></li>`).join('')}</ul>
+        <p class="tip-foot">${phrases(TIPS_FOOT)}</p>`));
+    }
   }
 
   // ---------- 描画 ----------
@@ -806,8 +839,9 @@ select.plain, .combo input {
     renderTips(list);
     if (!state.items.length) {
       list.insertAdjacentHTML('beforeend', `<div class="empty">
-        まだパレットがありません。<br>右下の<b>＋</b>から作ってみましょう。
-        <div class="ex">例：<span class="hl">#アニメ名</span> <span class="hl">#実況</span></div>
+        <p>パレットがありません。</p>
+        <p>右下の<b class="sym">＋</b>から作成できます。</p>
+        <div class="ex"><span class="ex-label">例</span><span class="hl">#番組名</span> <span class="hl">#実況タグ</span></div>
       </div>`);
       return;
     }
@@ -853,6 +887,23 @@ select.plain, .combo input {
   const LONG_MS = 450, MOVE_TOL = 10;
   let suppressTapUntil = 0;
   const tapBlocked = () => Date.now() < suppressTapUntil || !!document.querySelector('dialog[open]');
+  // 長押しで編集画面を開いたあと、指を離したときの後始末：
+  // 選択された文字を消し、選択を戻し、本文にカーソルを置く（指を離す操作の中なのでスマホでもキーボードが出る）
+  function holdUntilRelease() {
+    let done = false;
+    const release = () => {
+      if (done) return;
+      done = true;
+      ['touchend', 'touchcancel', 'pointerup'].forEach(t => window.removeEventListener(t, release, true));
+      clearTimeout(safety);
+      window.getSelection()?.removeAllRanges();
+      document.body.classList.remove('no-select');
+      focusText();
+    };
+    ['touchend', 'touchcancel', 'pointerup'].forEach(t => window.addEventListener(t, release, true));
+    // pointercancel は長押し中にブラウザが送ってくることがあるので見ない。離したことが取れなかったときの保険
+    const safety = setTimeout(release, 4000);
+  }
   function setupRow(row, item) {
     const body = row.querySelector('.body');
     let timer = null, sx = 0, sy = 0, downAt = 0, moved = false, longFired = false;
@@ -863,7 +914,10 @@ select.plain, .combo input {
       longFired = true; unpress();
       suppressTapUntil = Date.now() + 1000;
       if (navigator.vibrate) navigator.vibrate(15);
+      // 指を置いたまま編集画面が開くので、その指で画面の文字が選択されないよう、離すまで選択を止める
+      document.body.classList.add('no-select');
       openEditor(indexOfId(item.id));
+      holdUntilRelease();
     }
     row.addEventListener('contextmenu', (e) => e.preventDefault());
     body.addEventListener('pointerdown', (e) => {
@@ -878,20 +932,17 @@ select.plain, .combo input {
         moved = true; clearTimeout(timer); unpress();   // 指が動いた＝スクロール
       }
     });
-    body.addEventListener('pointerup', () => {
-      if (!longFired) { clearTimeout(timer); unpress(); return; }
-      // 長押しで開いた編集画面：指を離した操作の中でもう一度フォーカスすると、スマホでもカーソルとキーボードが出る
-      focusText();
-    });
+    body.addEventListener('pointerup', () => { if (!longFired) { clearTimeout(timer); unpress(); } });
     // ブラウザの長押し処理で cancel が来ても、指が動いていなければ長押しの判定は続ける
     body.addEventListener('pointercancel', () => { unpress(); if (moved) clearTimeout(timer); });
     body.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { moved = true; clearTimeout(timer); unpress(); } });
     // 長押しが成立した指を離したときは、ブラウザが作るクリック自体を出さない
-    body.addEventListener('touchend', (e) => { if (longFired) { e.preventDefault(); focusText(); } });
+    body.addEventListener('touchend', (e) => { if (longFired) e.preventDefault(); });
     body.addEventListener('click', (e) => {
       e.preventDefault();
       if (longFired || tapBlocked() || moved) return;
       if (downAt && Date.now() - downAt >= LONG_MS) { fireLong(); return; }   // 長く押していた → 長押し扱い
+      recordUse(item.id);
       onTap(item.text);
     });
   }
@@ -1188,9 +1239,11 @@ select.plain, .combo input {
   // 「自動」のときは端末のライト/ダーク切り替えにも追従する
   matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
   $('themeSelect').addEventListener('change', (e) => { state.settings.theme = e.target.value; save(); applyTheme(); });
-  $('tipsToggle').addEventListener('change', (e) => {
-    state.settings.tips = e.target.checked;
+  // 閉じた「使い方」（一覧・ツイートの引用）をどちらも戻す
+  $('tipsReset').addEventListener('click', () => {
+    state.settings.tips = true; state.settings.aboutTips = true; state.settings.quoteTips = true;
     save(); render();
+    toast('使い方を表示しました', 'ok');
   });
   function syncTapAction() {
     $('tapAction').value = state.settings.tapAction;
@@ -1201,7 +1254,6 @@ select.plain, .combo input {
     fillGenreSelect($('defaultGenre'));
     syncTapAction();
     $('themeSelect').value = state.settings.theme;
-    $('tipsToggle').checked = state.settings.tips;
     $('importTextArea').hidden = true;
     $('installHelp').hidden = true;
     syncInstall();
@@ -1389,7 +1441,7 @@ select.plain, .combo input {
   // ---------- ほかのアプリからの共有・連携 ----------
   // Android：ホーム画面に追加したアプリは、共有メニュー（Twitter のツイート共有など）に表示される（manifest の share_target）。
   // iPhone など：?text=… を付けてこのページを開けば同じように読み込める（ショートカット App などから）。
-  //   例）https://mbs-code.github.io/tag-palette/?text=%23アニメ名%20%23実況
+  //   例）https://mbs-code.github.io/tag-palette/?text=%23番組名%20%23実況タグ
   const SHARE_KEYS = ['title', 'text', 'url'];
   function sharedText(params) {
     const out = [];
@@ -1486,7 +1538,8 @@ select.plain, .combo input {
   let shareTarget = 'new';
   function openShare(text, target = 'new') {
     shareSeq++;
-    shareTarget = target;    $('shareFoot').textContent = target === 'editor'
+    shareTarget = target;
+    $('twTip').hidden = !state.settings.quoteTips;    $('shareFoot').textContent = target === 'editor'
       ? '選んだ内容は、本文の最後に追加されます。'
       : '選ぶと、その内容でパレットの追加画面が開きます。';
     const m = text.match(TWEET_URL);
@@ -1502,6 +1555,11 @@ select.plain, .combo input {
     else if (target === 'editor') $('twUrl').focus();
   }
   $('shareCancel').addEventListener('click', () => closeDlg($('shareDlg')));
+  $('twTipClose').addEventListener('click', () => {
+    const tip = $('twTip');
+    tip.classList.add('leaving');
+    setTimeout(() => { tip.hidden = true; tip.classList.remove('leaving'); state.settings.quoteTips = false; save(); }, 200);
+  });
   $('shareDlg').addEventListener('click', (e) => {
     const b = e.target.closest('[data-share]');
     if (!b || b.disabled) return;

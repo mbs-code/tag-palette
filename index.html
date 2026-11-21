@@ -199,6 +199,7 @@ a.list-btn { color: inherit; text-decoration: none; }
 /* 見出し「更新日」の横に、もっと薄い灰色で日時 */
 .card-date { margin-left: 10px; font-weight: 400; color: var(--sub); opacity: .65; font-variant-numeric: tabular-nums; }
 .tw-tip { margin: 0 0 4px; }
+#actDlg .sheet-body > .group:first-child { margin-top: 4px; }
 .tw-tip .tip-head { margin-bottom: 4px; }
 .share-src { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 30vh; overflow: auto; }
 .head-spacer { visibility: hidden; pointer-events: none; }
@@ -501,6 +502,29 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   </div>
 </dialog>
 
+<!-- タップしたとき「毎回選ぶ」のメニュー -->
+<dialog id="actDlg">
+  <div class="sheet-head">
+    <button type="button" id="actCancel" class="text-btn">キャンセル</button>
+    <h2><span class="ic" data-ic="tap"></span><span>パレット</span></h2>
+    <span class="text-btn head-spacer" aria-hidden="true">キャンセル</span>
+  </div>
+  <div class="sheet-body">
+  <div class="group">
+    <div class="item"><div class="share-src" id="actSrc"></div></div>
+  </div>
+  <div class="section-title">どうしますか？</div>
+  <div class="group">
+    <button type="button" class="list-btn chev" data-act="twitter"><span class="ico ic" data-ic="quote"></span>
+      <span class="lbl">Twitterを開く</span></button>
+    <button type="button" class="list-btn chev" data-act="copy"><span class="ico ic" data-ic="copy"></span>
+      <span class="lbl">クリップボードにコピー</span></button>
+    <button type="button" class="list-btn chev" data-act="edit"><span class="ico ic" data-ic="edit"></span>
+      <span class="lbl">編集する</span></button>
+  </div>
+  </div>
+</dialog>
+
 <!-- 設定 -->
 <dialog id="menuDlg">
   <div class="sheet-head">
@@ -533,24 +557,25 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   <div class="section-title">全般</div>
   <div class="group">
     <div class="item">
-      <div class="name name-row"><span class="ic" data-ic="theme"></span>テーマ</div>
-      <select class="plain" id="themeSelect" aria-label="テーマ">
-        <option value="auto">自動（端末の設定に合わせる）</option>
-        <option value="light">ライト</option>
-        <option value="dark">ダーク</option>
-      </select>
-    </div>
-    <div class="item">
       <div class="name name-row"><span class="ic" data-ic="tap"></span>タップしたときの動作</div>
       <select class="plain" id="tapAction" aria-label="タップしたときの動作">
         <option value="twitter">Twitterを開く</option>
         <option value="copy">クリップボードにコピー</option>
+        <option value="menu">毎回選ぶ（メニューを開く）</option>
       </select>
       <div class="hint" id="tapHint"></div>
     </div>
     <div class="item">
       <div class="name name-row"><span class="ic" data-ic="folder"></span>起動時に表示するグループ</div>
       <select class="plain" id="defaultGenre" aria-label="起動時に表示するグループ"></select>
+    </div>
+    <div class="item">
+      <div class="name name-row"><span class="ic" data-ic="theme"></span>テーマ</div>
+      <select class="plain" id="themeSelect" aria-label="テーマ">
+        <option value="auto">自動（端末の設定に合わせる）</option>
+        <option value="light">ライト</option>
+        <option value="dark">ダーク</option>
+      </select>
     </div>
   </div>
 
@@ -649,7 +674,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   function migrateSettings(s) {
     s = { ...(s || {}) };
     // 以前の「アプリで開く」「ブラウザで開く（x）」などは「Twitterを開く」にまとめる
-    if (s.tapAction !== 'copy') s.tapAction = 'twitter';
+    if (!['copy', 'menu'].includes(s.tapAction)) s.tapAction = 'twitter';
     s = { ...defaultSettings, ...s };
     if (!['auto', 'light', 'dark'].includes(s.theme)) s.theme = 'auto';
     s.tips = s.tips !== false;
@@ -779,12 +804,33 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     it.uses = (it.uses || 0) + 1;
     save();
   }
-  function onTap(text) {
-    const t = postText(text);
+  // twitter / copy はすぐ実行。menu は選ぶダイアログを開く（使った記録は実行したときだけ）
+  function onTap(item) {
     const action = state.settings.tapAction;
+    if (action === 'menu') { openActions(item); return; }
+    runAction(action, item);
+  }
+  function runAction(action, item) {
+    recordUse(item.id);
+    const t = postText(item.text);
     if (action === 'copy') { copyText(t, 'コピーしました'); return; }
     openWeb(t);
   }
+  let actItem = null;
+  function openActions(item) {
+    actItem = item;
+    $('actSrc').innerHTML = highlight(item.text);
+    openDlg($('actDlg'));
+  }
+  $('actCancel').addEventListener('click', () => closeDlg($('actDlg')));
+  $('actDlg').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    if (!b || !actItem) return;
+    const item = actItem, act = b.dataset.act;
+    closeDlg($('actDlg'));
+    if (act === 'edit') openEditor(indexOfId(item.id));
+    else runAction(act, item);
+  });
 
   // ---------- チュートリアル ----------
   // 一覧の先頭に2枚のカードを出す。それぞれ × で閉じると、そのカードだけ次から出なくなる
@@ -805,6 +851,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   ];
   // 使い方の下に1行あけて添える一文
   const TIPS_FOOT = 'ホーム画面に|追加すれば、|<b>アプリ</b>としても|利用可能です。|手順は|右上の<b class="sym">⚙</b>から。';
+  // OGP 画像の ?v=…（画像を変えたときだけ上げる）。<meta property="og:image"> の1か所で管理し、一覧の画像にも同じものを付ける
+  const OGP_V = (() => { try { return new URL(document.querySelector('meta[property="og:image"]').content).search; } catch { return ''; } })();
   const phrases = (html) => html.split('|').map(x => `<span class="ph">${x}</span>`).join('');
   const tipIcon = (t) => t.ico
     ? `<span class="tip-ico" aria-hidden="true"><svg viewBox="0 0 24 24">${ICONS[t.ico] || ''}</svg></span>`
@@ -823,7 +871,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   function renderTips(list) {
     if (state.settings.aboutTips) {
       list.appendChild(tipCard('aboutTips', 'タグパレットとは', `
-        <img class="tip-ogp" src="ogp.png" alt="パレットをタップすると、Twitterの投稿画面にそのまま入る様子" width="1200" height="630">
+        <img class="tip-ogp" src="ogp.png${OGP_V}" alt="パレットをタップすると、Twitterの投稿画面にそのまま入る様子" width="1200" height="630">
         <div class="tip-lead">${ABOUT_LEAD.map(l => `<p>${phrases(l)}</p>`).join('')}</div>`));
     }
     if (state.settings.tips) {
@@ -945,8 +993,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       e.preventDefault();
       if (longFired || tapBlocked() || moved) return;
       if (downAt && Date.now() - downAt >= LONG_MS) { fireLong(); return; }   // 長く押していた → 長押し扱い
-      recordUse(item.id);
-      onTap(item.text);
+      onTap(item);
     });
   }
 
@@ -1229,7 +1276,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   // ---------- 設定 ----------
   const TAP_HINTS = {
     twitter: 'Twitterの投稿画面を開きます。',
-    copy: 'クリップボードにコピーします。好きなアプリに貼り付けて使えます。'
+    copy: 'クリップボードにコピーします。好きなアプリに貼り付けて使えます。',
+    menu: 'タップするたびに、Twitterを開く・コピー・編集から選べます。'
   };
   function applyTheme() {
     const t = state.settings.theme;

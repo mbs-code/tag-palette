@@ -93,7 +93,10 @@ html, .sheet-body, .combo-menu, textarea { scrollbar-width: auto; scrollbar-colo
 html, body { margin: 0; background: var(--bg); color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
   -webkit-tap-highlight-color: transparent; }
-button { font: inherit; color: inherit; cursor: pointer; }
+button { font: inherit; color: inherit; cursor: pointer; transition: scale .12s ease; }
+/* すべてのボタンは押すと少し沈む（押しボタン風）。幅の広いボタンは控えめに */
+button:not(:disabled):active { scale: .94; }
+.list-btn:not(:disabled):active, .pill-btn:not(:disabled):active { scale: .98; }
 [hidden] { display: none !important; }
 
 /* ---------- ヘッダー ---------- */
@@ -105,6 +108,9 @@ header {
   display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--line);
 }
 header h1 { font-size: 17px; margin: 0; white-space: nowrap; display: flex; align-items: center; gap: 7px; }
+/* タイトルの横のバージョン（rev129 など） */
+.head-ver { font-size: 10px; font-weight: 700; color: var(--sub); background: var(--chip); border-radius: 999px; padding: 2px 7px; }
+.head-ver:empty { display: none; }
 header .logo { width: 26px; height: 26px; border-radius: 7px; flex: none; }
 /* 設定の一番下：アプリ情報（文字だけで表示） */
 /* このアプリについて：アイコン＋名前・バージョン／リンク2つ／アクセス解析（折りたたみ） */
@@ -114,6 +120,11 @@ header .logo { width: 26px; height: 26px; border-radius: 7px; flex: none; }
 .about-name { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; color: var(--text); }
 .about-ver { font-size: 11px; font-weight: 700; color: var(--accent); background: var(--chip); border-radius: 999px; padding: 2px 8px; }
 .about-date { font-size: 12px; margin-top: 2px; }
+.about-text { flex: 1; min-width: 0; }
+/* このアプリについて：右の「更新」（ページを再読み込みして最新版にする） */
+.about-reload { flex: none; display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--chip); color: var(--accent); font-size: 13px; font-weight: 700; }
+.about-reload .ic { width: 16px; height: 16px; }
 .about-links { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
 .about-links a { display: flex; flex-direction: column; gap: 1px; padding: 10px 14px; color: var(--accent); text-decoration: none; font-size: 13px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .about-links a + a { border-left: 1px solid var(--line); }
@@ -179,16 +190,18 @@ header .grow { flex: 1; }
   background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
 }
 .genre-select[aria-expanded="true"], .genre-select:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
-/* ヘッダーの並べ方の切り替え：設定のセレクト（select.plain）と同じ見た目で、高さだけボタンに合わせる */
-select.plain.view-select, .select-btn.view-select { width: auto; flex: none; height: 38px; font-size: 14px; padding: 0 27px 0 8px;
-  background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%; }
+/* ヘッダーのボタンの枠は薄いグレー。並べ方はグレーベース、グループ・設定は青ベース */
+header { --hbtn-line: color-mix(in srgb, var(--sub) 30%, var(--line)); --hbtn-text: color-mix(in srgb, var(--text) 35%, var(--sub)); }
+/* ヘッダーの並べ方の切り替え：押すたびに グループ順 ⇄ 利用順 */
+.view-toggle { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 38px; padding: 0 11px;
+  border: 1px solid var(--hbtn-line); border-radius: 12px;
+  background: var(--press); color: var(--hbtn-text); font-size: 14px; font-weight: 700; white-space: nowrap; }
+.view-toggle .ic { width: 16px; height: 16px; }
 /* 利用順：並べ替えの ≡ は出さない（見出しは 直近・今日・今週・今月・それ以前・未使用） */
 #list.recent .row .handle { display: none; }
 #list.recent .row .body { padding-right: 14px; }
-.icon-btn { flex: none; border: none; border-radius: 12px; width: 38px; height: 38px;
-  display: grid; place-items: center; background: var(--chip); color: var(--accent); transition: transform .3s ease; }
-.icon-btn:active { transform: scale(.92); }
-#menuBtn:active { transform: rotate(45deg) scale(.95); }
+.icon-btn { flex: none; border: 1px solid var(--hbtn-line); border-radius: 12px; width: 38px; height: 38px;
+  display: grid; place-items: center; background: var(--chip); color: var(--accent); }
 /* 編集モード：ボタンを塗りつぶしに */
 .icon-btn .ic { width: 22px; height: 22px; }
 /* 塗りつぶしのSVGアイコン（文字色で描画） */
@@ -259,8 +272,10 @@ main { padding: 8px 16px calc(env(safe-area-inset-bottom) + 96px); max-width: 64
   align-self: center; }
 .row.pressing { background: var(--press); }
 /* グループの色：カードの左に縦線 */
+/* 色のあるグループは左に太い線。色のないカードは普通の枠線のまま、本文の位置だけそろえる */
 .row.colored { border-left: 8px solid var(--gc); }
-.row.colored > .body { padding-left: 18px; }
+.row > .body { padding-left: 18px; }
+.row:not(.colored) > .body { padding-left: 25px; }
 /* 無効なパレット：グレーにして、タップしても何も起きない（長押し・並べ替えはできる） */
 .row.disabled .body { opacity: .4; filter: grayscale(1); }
 .row.disabled .body .hl { color: var(--sub); }
@@ -278,9 +293,7 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; }
   position: fixed; right: 20px; bottom: calc(env(safe-area-inset-bottom) + 20px);
   width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--fab);
   color: var(--accent-text); display: grid; place-items: center; box-shadow: 0 4px 14px rgba(29,155,240,.3);
-  transition: transform .15s;
 }
-.fab:active { transform: scale(.92); }
 .fab .ic { width: 28px; height: 28px; }
 
 /* ---------- ダイアログ ---------- */
@@ -352,8 +365,11 @@ select.plain, .combo input, .select-btn {
 /* 選択肢のメニュー：押した欄のすぐ下（入りきらなければ上）にふわっと出す */
 .pick-menu { position: fixed; top: 0; left: 0; z-index: 50; }
 .pick-menu[popover] { inset: auto; margin: 0; color: var(--text); overflow-y: auto; }
-.pick-menu .pick-dot { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--gc); }
-.pick-menu .pick-dot.none { background: transparent; box-shadow: inset 0 0 0 2px var(--sub); opacity: .55; }
+.pick-menu .pick-dot, .g-dot { flex: none; display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--gc); }
+.pick-menu .pick-dot.none, .g-dot.none { background: transparent; box-shadow: inset 0 0 0 2px var(--sub); opacity: .55; }
+/* 一覧の見出し・グループ欄：色の丸＋名前 */
+.section-title .g-dot { width: 10px; height: 10px; margin-right: 7px; vertical-align: -1px; }
+.select-btn .g-dot { margin-right: 8px; vertical-align: -1px; }
 .pick-menu .genre-opt.muted .g-name { color: var(--sub); }
 .pick-menu .pick-new { display: flex; gap: 6px; padding: 4px 4px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
 .pick-menu .pick-new input { flex: 1; min-width: 0; font-size: 15px; padding: 7px 10px; }
@@ -444,12 +460,9 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
 </head>
 <body>
 <header>
-  <h1><img src="icon.svg" alt="" class="logo" width="26" height="26">タグパレット</h1>
+  <h1><img src="icon.svg" alt="" class="logo" width="26" height="26">タグパレット<span class="head-ver" id="headVer"></span></h1>
   <span class="grow"></span>
-  <select class="plain view-select" id="viewSelect" aria-label="並べ方">
-    <option value="group">グループ順</option>
-    <option value="recent">利用順</option>
-  </select>
+  <button type="button" class="view-toggle" id="viewToggle" aria-label="並べ方を切り替える"><span class="ic" data-ic="sort"></span><span id="viewLabel"></span></button>
   <button class="icon-btn" id="groupBtn" aria-label="グループ"><span class="ic" data-ic="layers"></span></button>
   <button class="icon-btn" id="menuBtn" aria-label="設定"><span class="ic" data-ic="gear"></span></button>
 </header>
@@ -656,6 +669,14 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
         <option value="dark">ダーク</option>
       </select>
     </div>
+    <div class="item">
+      <div class="name name-row"><span class="ic" data-ic="quote"></span>ツイートの取得先</div>
+      <select class="plain" id="tweetSource" aria-label="ツイートの取得先">
+        <option value="official">Twitter</option>
+        <option value="fx">FxTwitter（非公式）</option>
+      </select>
+      <div class="hint" id="tweetSourceHint"></div>
+    </div>
   </div>
 
   <div class="section-title">バックアップ（書き出し）</div>
@@ -694,6 +715,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
         <div class="about-name">タグパレット<span class="about-ver" id="appVer"></span></div>
         <div class="about-date" id="appDate"></div>
       </div>
+      <button type="button" class="about-reload" id="appReload"><span class="ic" data-ic="reload"></span>更新</button>
     </div>
     <div class="about-links">
       <a href="https://x.com/_mabasasi_code" target="_blank" rel="noopener noreferrer"><span>Author</span>@_mabasasi_code</a>
@@ -703,7 +725,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     <details class="about-privacy">
       <summary>データの保存とアクセス解析について</summary>
       <p>パレットや設定などのアプリのデータは、この端末（ブラウザ）の中にだけ保存されます。サーバーに送られることはありません。</p>
-      <p>ツイートを引用するときは、本文を取得するためにそのツイートのURLをTwitter（X）に送ります。</p>
+      <p>ツイートを引用するときは、本文を取得するためにツイートのURLを送信します。</p>
       <p>このサイトでは、利用状況を把握するためにGoogleタグマネージャー（Googleアナリティクス）を使用しています。Cookieを使って匿名のデータを収集しますが、個人を特定する情報は含みません。</p>
       <p><a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" rel="noopener noreferrer">Googleによるデータの使用について</a></p>
     </details>
@@ -749,7 +771,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   }
 
   // ---------- 保存まわり ----------
-  const defaultSettings = { tapAction: 'twitter', genre: ALL, theme: 'auto', closedTips: [], viewMode: 'group' };
+  const defaultSettings = { tapAction: 'twitter', genre: ALL, theme: 'auto', closedTips: [], viewMode: 'group', tweetSource: 'official' };
   function migrateSettings(s) {
     s = { ...(s || {}) };
     // 以前の「アプリで開く」「ブラウザで開く（x）」などは「Twitterを開く」にまとめる
@@ -768,6 +790,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       Object.entries(s.groupColors).filter(([, c]) => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c))) : {};
     s.genre = ALL;   // グループでの絞り込みはやめた（いつも「すべて」）
     if (!['group', 'recent'].includes(s.viewMode)) s.viewMode = 'group';
+    if (!['official', 'fx'].includes(s.tweetSource)) s.tweetSource = 'official';
     delete s.openMode; delete s.openTarget; delete s.tipsDismissed; delete s.trailingSpace; delete s.bgDim;
     return s;
   }
@@ -828,6 +851,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     return ALL; // そのグループが無くなっていたら「すべて」に戻す
   }
   const genreLabel = (g) => g === ALL ? 'すべて' : (g === '' ? '未分類' : g);
+  // グループの色の丸（色がなければ灰色の輪）
+  const groupDot = (g) => { const c = groupColor(g); return `<span class="g-dot${c ? '' : ' none'}"${c ? ` style="--gc:${c}"` : ''} aria-hidden="true"></span>`; };
   // グループの色（settings.groupColors：グループ名 → 色。未分類は ''）
   const groupColor = (g) => (state.settings.groupColors || {})[g] || '';
 
@@ -963,7 +988,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     }
     // 最近使った順：グループに関係なく、最後に使った順に1列で並べる（まだ使っていないものは後ろ、元の並びのまま）
     list.classList.toggle('recent', state.settings.viewMode === 'recent');
-    $('viewSelect').value = state.settings.viewMode; $('viewSelect')._sync?.();   // バックアップの読み込みなどで変わったときもそろえる
+    $('viewLabel').textContent = state.settings.viewMode === 'recent' ? '利用順' : 'グループ順';   // バックアップの読み込みなどで変わったときもそろえる
     if (state.settings.viewMode === 'recent') {
       const t = (i) => i.used ? Date.parse(i.used) : -Infinity;
       const items = state.items.map((it, k) => [it, k]).sort((a, b) => (t(b[0]) - t(a[0])) || (a[1] - b[1])).map(([it]) => it);
@@ -1009,7 +1034,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       if (showTitles) {
         const t = document.createElement('div');
         t.className = 'section-title' + (n === 0 ? ' first' : '');
-        t.textContent = genreLabel(name);
+        t.innerHTML = groupDot(name) + esc(genreLabel(name));
         list.appendChild(t);
       } else {
         const sp = document.createElement('div'); sp.style.height = '4px'; list.appendChild(sp);
@@ -1367,7 +1392,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   // 値は見えない #fGenre に入れ、ボタンにはグループ名（未分類は薄い文字）を出す
   function setGenreField(v) {
     $('fGenre').value = v;
-    $('fGenreBtn').textContent = v || '未分類';
+    $('fGenreBtn').innerHTML = groupDot(v) + `<span>${esc(v || '未分類')}</span>`;
     $('fGenreBtn').classList.toggle('placeholder', !v);
   }
   $('fGenreBtn').addEventListener('click', () => {
@@ -1486,6 +1511,16 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     $('tapHint').textContent = TAP_HINTS[state.settings.tapAction];
   }
   $('tapAction').addEventListener('change', (e) => { state.settings.tapAction = e.target.value; save(); syncTapAction(); });
+  // ツイートの取得先（公式 / 非公式）
+  const TW_SOURCE_HINTS = {
+    official: 'https://publish.twitter.com/oembed',
+    fx: 'https://api.fxtwitter.com'
+  };
+  function syncTweetSource() {
+    $('tweetSource').value = state.settings.tweetSource; $('tweetSource')._sync?.();
+    $('tweetSourceHint').textContent = TW_SOURCE_HINTS[state.settings.tweetSource];
+  }
+  $('tweetSource').addEventListener('change', (e) => { state.settings.tweetSource = e.target.value; save(); syncTweetSource(); });
   // ---------- グループ（並び替え・色） ----------
   // ダークでもライトでも見やすい、中くらいの明るさの色
   // Tailwind CSS の各色の 500（中くらいの明るさ）。ダークでもライトでも見やすい
@@ -1505,6 +1540,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       const c = groupColor(g);
       return `<div class="row${c ? ' colored' : ''}" data-g="${esc(g)}"${c ? ` style="--gc:${c}"` : ''}>
         <div class="body">
+          ${groupDot(g)}
           <span class="g-name${g === '' ? ' muted' : ''}">${esc(genreLabel(g))}</span>
           <span class="g-count">${count(g)}件</span>
         </div>
@@ -1517,8 +1553,13 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     state.settings.groupOrder = [...$('groupCards').querySelectorAll('.row')].map(r => r.dataset.g);
     save(); render();
   }
-  // 並べ方の切り替え（グループ別 / 最近使った）。設定に保存して次回も同じ並べ方で開く
-  $('viewSelect').addEventListener('change', (e) => { state.settings.viewMode = e.target.value; save(); render(); window.scrollTo(0, 0); });
+  // 「このアプリについて」の更新：ページを再読み込み
+  $('appReload').addEventListener('click', () => location.reload());
+  // 並べ方の切り替え（グループ順 ⇄ 利用順）。押すたびに切り替わり、設定に保存して次回も同じ並べ方で開く
+  $('viewToggle').addEventListener('click', () => {
+    state.settings.viewMode = state.settings.viewMode === 'recent' ? 'group' : 'recent';
+    save(); render(); window.scrollTo(0, 0);
+  });
   $('groupBtn').addEventListener('click', () => { renderGroupList(); openDlg($('groupDlg')); });
   $('groupClose').addEventListener('click', () => closeDlg($('groupDlg')));
   setupStaticTip($('groupTip'));
@@ -1610,7 +1651,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   });
 
   $('menuBtn').addEventListener('click', () => {
-    syncTapAction();
+    syncTapAction(); syncTweetSource();
     $('themeSelect').value = state.settings.theme; $('themeSelect')._sync?.();
     $('importTextArea').hidden = true;
     $('installHelp').hidden = true;
@@ -1731,6 +1772,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     // 引用（吹き出し）
     quote: '<path d="M5 3.5h14A2.5 2.5 0 0 1 21.5 6v9a2.5 2.5 0 0 1-2.5 2.5h-6.2l-4.3 3.3a.8.8 0 0 1-1.3-.6v-2.7H5A2.5 2.5 0 0 1 2.5 15V6A2.5 2.5 0 0 1 5 3.5zm3.2 5.2a1.6 1.6 0 0 0-1.6 1.6v.1a1.6 1.6 0 0 0 1.4 1.6c-.1.5-.4.9-.9 1.2a.5.5 0 0 0 .3.9c1.5-.2 2.4-1.4 2.4-2.9v-.9a1.6 1.6 0 0 0-1.6-1.6zm6 0a1.6 1.6 0 0 0-1.6 1.6v.1a1.6 1.6 0 0 0 1.4 1.6c-.1.5-.4.9-.9 1.2a.5.5 0 0 0 .3.9c1.5-.2 2.4-1.4 2.4-2.9v-.9a1.6 1.6 0 0 0-1.6-1.6z"/>',
     // 電球
+    reload: '<path d="M12 3.5a8.5 8.5 0 0 1 7.4 4.3V5.6a1.3 1.3 0 0 1 2.6 0v5.2a1.3 1.3 0 0 1-1.3 1.3h-5.2a1.3 1.3 0 0 1 0-2.6h2.2A5.9 5.9 0 1 0 17.9 15a1.3 1.3 0 0 1 2.4 1A8.5 8.5 0 1 1 12 3.5z"/>',
+    sort: '<path d="M6 3.5v16M2.6 16.2 6 19.6l3.4-3.4M13.4 10.6 17 3.4l3.6 7.2M14.6 8.2h4.8M13.8 13.6h6.4l-6.4 7h6.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
     bulb: '<path d="M12 2a7 7 0 0 1 4.2 12.6c-.7.5-1.2 1.3-1.2 2.2v.2H9v-.2c0-.9-.5-1.7-1.2-2.2A7 7 0 0 1 12 2z"/><rect x="9" y="18.5" width="6" height="1.8" rx=".9"/><rect x="10" y="21" width="4" height="1.8" rx=".9"/>'
   };
 
@@ -1760,6 +1803,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     appVersion = [self.APP_RELEASED, self.APP_CACHE.replace('tag-palette-', '')].filter(Boolean).join(' ');
   }
   $('appVer').textContent = self.APP_CACHE ? self.APP_CACHE.replace('tag-palette-', '') : '';
+  $('headVer').textContent = $('appVer').textContent;
   $('appDate').textContent = self.APP_RELEASED ? self.APP_RELEASED + ' 更新' : 'バージョン情報を読み込めませんでした';
 
   // ---------- ホーム画面に追加（PWA） ----------
@@ -1851,9 +1895,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     el.classList.toggle('warn-note', warn);
   }
 
-  // Twitter アプリの「共有」はツイートの URL だけを送ってくるので、
-  // Twitter 公式の埋め込み用 API（oEmbed）でツイートの本文を取ってくる。
-  // 長いツイートは oEmbed 側で途中までになる（末尾が「…」）。外部サービスは使わず、そのことを知らせる
+  // Twitter アプリの「共有」はツイートの URL だけを送ってくるので、本文を取ってくる。
+  // 取得先は設定で選ぶ：公式（oEmbed。長いツイートは途中までになり、末尾が「…」）/ 非公式（FxTwitter。全文が取れる）
   const TWEET_URL = /https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/[A-Za-z0-9_]+\/status(?:es)?\/\d+[^\s　]*/;
   async function getJSON(url) {
     const ctl = new AbortController();
@@ -1866,6 +1909,13 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   }
   async function fetchTweetText(url) {
     const clean = url.split(/[?#]/)[0];
+    if (state.settings.tweetSource === 'fx') {
+      const id = (clean.match(/\/status(?:es)?\/(\d+)/) || [])[1];
+      const fx = id ? await getJSON('https://api.fxtwitter.com/status/' + id) : null;
+      const t = fx && fx.tweet;
+      // 全文が取れるので cut は false
+      return { text: t && typeof t.text === 'string' ? t.text.trim() : '', cut: false };
+    }
     const oe = await getJSON('https://publish.twitter.com/oembed?omit_script=1&lang=ja&url=' + encodeURIComponent(clean));
     if (!oe || !oe.html) return { text: '', cut: false };
     const p = new DOMParser().parseFromString(oe.html.replace(/<br\s*\/?>/gi, '\n'), 'text/html').querySelector('blockquote p');
@@ -1946,9 +1996,10 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   // ---------- 追加・編集画面の「ツイートから引用」 ----------
   $('twBtn').addEventListener('click', () => openShare('', 'editor'));
 
-  enhanceSelect($('viewSelect'), '並べ方');
   enhanceSelect($('tapAction'), 'タップしたときの動作');
   enhanceSelect($('themeSelect'), 'テーマ');
+  enhanceSelect($('tweetSource'), 'ツイートの取得先');
+  syncTweetSource();
   applyTheme();
   render();
 

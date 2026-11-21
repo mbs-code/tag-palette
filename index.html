@@ -102,7 +102,7 @@ header {
   /* スクロールしたカードが、すりガラス越しにうっすら透けて見える */
   background: var(--glass); -webkit-backdrop-filter: saturate(1.6) blur(14px); backdrop-filter: saturate(1.6) blur(14px);
   padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
-  display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--line);
 }
 header h1 { font-size: 17px; margin: 0; white-space: nowrap; display: flex; align-items: center; gap: 7px; }
 header .logo { width: 26px; height: 26px; border-radius: 7px; flex: none; }
@@ -119,6 +119,26 @@ header .logo { width: 26px; height: 26px; border-radius: 7px; flex: none; }
 .about-links a + a { border-left: 1px solid var(--line); }
 .about-links a span { font-size: 11px; font-weight: 400; color: var(--sub); }
 .about-links a:active { background: var(--press); }
+/* グループのダイアログ：一覧と同じカード */
+.group-cards .row { cursor: pointer; background: var(--sheet-card); }
+.group-cards .row:active { background: var(--press); }
+.group-cards .row .body { display: flex; align-items: center; gap: 12px; }
+.group-cards .g-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.group-cards .g-name.muted { color: var(--sub); }
+.group-cards .g-count { font-size: 12px; color: var(--sub); font-variant-numeric: tabular-nums; }
+.color-dot { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); background: var(--gc, transparent); }
+.color-dot.none { background: repeating-linear-gradient(45deg, transparent 0 4px, var(--line) 4px 6px); }
+/* 色えらび */
+.swatches { display: flex; flex-wrap: wrap; gap: 14px; padding: 4px 2px; }
+.swatch { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); background: var(--sw); padding: 0; position: relative; }
+.swatch.none { background: repeating-linear-gradient(45deg, transparent 0 5px, var(--line) 5px 8px); }
+/* 選択中：その色の輪っか（色なし・虹色はアクセント色） */
+.swatch.sel { outline: 2px solid var(--sw, var(--accent)); outline-offset: 3px; }
+.swatch.none.sel, .swatch.rainbow.sel { outline-color: var(--accent); }
+.swatch.rainbow { background: conic-gradient(#f4212e, #ff7a00, #f5b400, #7cb342, #00ba7c, #00b8d9, #1d9bf0, #7856ff, #f91880, #f4212e); }
+/* 自由に選んだ色を使っているときは、虹の真ん中にその色を出す */
+.swatch.rainbow.sel { background: radial-gradient(circle, var(--sw) 0 42%, transparent 44%), conic-gradient(#f4212e, #ff7a00, #f5b400, #7cb342, #00ba7c, #00b8d9, #1d9bf0, #7856ff, #f91880, #f4212e); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .about-contact { margin: 0; padding: 10px 14px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.7; }
 .about-contact a { color: var(--accent); text-decoration: none; }
 .about-privacy { border-top: 1px solid var(--line); }
@@ -150,7 +170,7 @@ header .grow { flex: 1; }
 .genre-dd { position: relative; flex: 0 1 auto; min-width: 0; max-width: 46vw; }
 .genre-select {
   /* 設定画面のセレクト（select.plain）と同じ見た目：枠線付きの角丸の箱＋灰色の ▾ */
-  display: block; width: 100%; max-width: 46vw; min-width: 120px; -webkit-appearance: none; appearance: none;
+  display: block; width: 100%; max-width: 46vw; min-width: 96px; -webkit-appearance: none; appearance: none;
   font: inherit; font-size: 15px; color: var(--text); cursor: pointer;
   background-color: var(--field); border: 1px solid var(--line); border-radius: 10px;
   padding: 7px 34px 7px 12px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; text-align: left;
@@ -159,10 +179,17 @@ header .grow { flex: 1; }
   background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
 }
 .genre-select[aria-expanded="true"], .genre-select:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+/* ヘッダーの並べ方の切り替え：設定のセレクト（select.plain）と同じ見た目で、高さだけボタンに合わせる */
+select.plain.view-select, .select-btn.view-select { width: auto; flex: none; height: 38px; font-size: 14px; padding: 0 27px 0 8px;
+  background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%; }
+/* 利用順：並べ替えの ≡ は出さない（見出しは 直近・今日・今週・今月・それ以前・未使用） */
+#list.recent .row .handle { display: none; }
+#list.recent .row .body { padding-right: 14px; }
 .icon-btn { flex: none; border: none; border-radius: 12px; width: 38px; height: 38px;
   display: grid; place-items: center; background: var(--chip); color: var(--accent); transition: transform .3s ease; }
 .icon-btn:active { transform: scale(.92); }
 #menuBtn:active { transform: rotate(45deg) scale(.95); }
+/* 編集モード：ボタンを塗りつぶしに */
 .icon-btn .ic { width: 22px; height: 22px; }
 /* 塗りつぶしのSVGアイコン（文字色で描画） */
 .ic { display: inline-grid; place-items: center; flex: none; }
@@ -180,16 +207,19 @@ header .grow { flex: 1; }
 .group > :last-child { border-bottom-left-radius: 13px; border-bottom-right-radius: 13px; }
 .group .item { padding: 12px 14px; }
 .group .item .name { font-size: 15px; margin-bottom: 8px; }
-.list-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px; border: none;
+/* 1行の項目はアプリ全体で同じ高さ（52px）。説明つきの項目だけ、その分高くなる */
+.list-btn { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 14px; border: none;
   background: none; font-size: 15px; text-align: left; }
 .list-btn:active { background: var(--press); }
 .list-btn .ico { width: 22px; height: 22px; display: grid; place-items: center; color: var(--accent); }
 .list-btn .lbl { flex: 1; }
 .list-btn .sub { display: block; font-size: 12px; color: var(--sub); margin-top: 2px; }
-.list-btn.chev::after { content: '›'; color: var(--sub); font-size: 20px; }
+.list-btn.chev::after { content: '›'; color: var(--sub); font-size: 20px; line-height: 1; }
 a.list-btn { color: inherit; text-decoration: none; }
 .list-btn.danger, .list-btn.danger .ico { color: var(--danger); }
 .list-btn:disabled { opacity: .45; cursor: default; }
+/* 変えられない入力欄（未分類の名前など）はグレーに */
+input[type=text]:disabled { opacity: .5; color: var(--sub); }
 .list-btn:disabled:active { background: none; }
 /* 読み込みダイアログ：受け取った文（タグ・URL は青字） */
 .share-prev { white-space: pre-line; color: var(--accent) !important; word-break: break-word; }
@@ -199,7 +229,6 @@ a.list-btn { color: inherit; text-decoration: none; }
 /* 見出し「更新日」の横に、もっと薄い灰色で日時 */
 .card-date { margin-left: 10px; font-weight: 400; color: var(--sub); opacity: .65; font-variant-numeric: tabular-nums; }
 .tw-tip { margin: 0 0 4px; }
-#actDlg .sheet-body > .group:first-child { margin-top: 4px; }
 .tw-tip .tip-head { margin-bottom: 4px; }
 .share-src { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 30vh; overflow: auto; }
 .head-spacer { visibility: hidden; pointer-events: none; }
@@ -229,9 +258,14 @@ main { padding: 8px 16px calc(env(safe-area-inset-bottom) + 96px); max-width: 64
   white-space: pre-wrap; word-break: break-word;
   align-self: center; }
 .row.pressing { background: var(--press); }
+/* グループの色：カードの左に縦線 */
+.row.colored { border-left: 8px solid var(--gc); }
+.row.colored > .body { padding-left: 18px; }
 /* 無効なパレット：グレーにして、タップしても何も起きない（長押し・並べ替えはできる） */
 .row.disabled .body { opacity: .4; filter: grayscale(1); }
 .row.disabled .body .hl { color: var(--sub); }
+/* 無効なパレットは左の色も薄く */
+.row.disabled.colored { border-left-color: color-mix(in srgb, var(--gc) 30%, transparent); }
 .handle { flex: none; width: 64px; display: flex; align-items: center; justify-content: center;
   color: var(--sub); font-size: 20px; touch-action: none; cursor: grab; }
 /* ドラッグ中：持ち上げた行は影付きで指に追従、他の行は滑らかによける */
@@ -282,11 +316,11 @@ dialog .group { background: var(--sheet-card); }
 .counter { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--sub); font-variant-numeric: tabular-nums; }
 .counter.over { color: var(--danger); font-weight: 700; }
 .err:empty { display: none; }
-input[type=text], textarea, select.plain {
+input[type=text], textarea, select.plain, .select-btn {
   width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 10px;
   border: 1px solid var(--line); background: var(--field); color: var(--text);
 }
-select.plain, .combo input {
+select.plain, .combo input, .select-btn {
   -webkit-appearance: none; appearance: none; padding-right: 36px;
   background-image: linear-gradient(45deg, transparent 50%, var(--sub) 50%), linear-gradient(135deg, var(--sub) 50%, transparent 50%);
   background-position: calc(100% - 19px) 55%, calc(100% - 14px) 55%;
@@ -312,6 +346,20 @@ select.plain, .combo input {
 
 /* グループ入力：見た目はセレクト、入力で候補を絞り込み */
 .combo { position: relative; }
+/* セレクトの代わりのボタン（押すとポップアップで選ぶ） */
+.select-btn { display: block; text-align: left; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.select-btn.placeholder { color: var(--sub); }
+/* 選択肢のメニュー：押した欄のすぐ下（入りきらなければ上）にふわっと出す */
+.pick-menu { position: fixed; top: 0; left: 0; z-index: 50; }
+.pick-menu[popover] { inset: auto; margin: 0; color: var(--text); overflow-y: auto; }
+.pick-menu .pick-dot { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--gc); }
+.pick-menu .pick-dot.none { background: transparent; box-shadow: inset 0 0 0 2px var(--sub); opacity: .55; }
+.pick-menu .genre-opt.muted .g-name { color: var(--sub); }
+.pick-menu .pick-new { display: flex; gap: 6px; padding: 4px 4px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+.pick-menu .pick-new input { flex: 1; min-width: 0; font-size: 15px; padding: 7px 10px; }
+.pick-menu .pick-new .pill-btn { flex: none; padding: 7px 12px; }
+.pick-menu .pick-err { color: var(--danger); font-size: 12px; padding: 0 6px 6px; }
+.pick-menu .pick-err:empty { display: none; }
 .combo input::placeholder { color: var(--sub); }
 .combo-menu { margin-top: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--card);
   max-height: 220px; overflow-y: auto; }
@@ -324,7 +372,7 @@ select.plain, .combo input {
 .combo-opt.new { color: var(--accent); }
 .import-box { padding: 12px 14px; }
 .list-btn:disabled { opacity: .55; cursor: default; }
-.list-btn:disabled::after { display: none; }
+.list-btn:disabled::after { visibility: hidden; }
 .install-help { padding: 4px 14px 12px 46px; font-size: 13px; line-height: 1.7; color: var(--sub); }
 .install-help ol { margin: 0 0 8px; padding-left: 1.2em; }
 .install-help ol:last-child { margin-bottom: 0; }
@@ -381,6 +429,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
 
 /* ---------- 設定：スイッチ ---------- */
 .switch-row { display: flex; align-items: center; gap: 12px; }
+/* スイッチの行も、ほかの1行の項目と同じ高さに */
+.group > .item:has(> .switch-row) { min-height: 52px; display: flex; flex-direction: column; justify-content: center; }
 .switch-row .name { flex: 1; margin: 0 !important; }
 .switch { position: relative; flex: none; width: 34px; height: 20px; }
 .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
@@ -395,11 +445,12 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
 <body>
 <header>
   <h1><img src="icon.svg" alt="" class="logo" width="26" height="26">タグパレット</h1>
-  <div class="genre-dd" id="genreDD">
-    <button type="button" class="genre-select" id="genreBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="表示するグループ"></button>
-    <div class="genre-menu" id="genreList" role="listbox"></div>
-  </div>
   <span class="grow"></span>
+  <select class="plain view-select" id="viewSelect" aria-label="並べ方">
+    <option value="group">グループ順</option>
+    <option value="recent">利用順</option>
+  </select>
+  <button class="icon-btn" id="groupBtn" aria-label="グループ"><span class="ic" data-ic="layers"></span></button>
   <button class="icon-btn" id="menuBtn" aria-label="設定"><span class="ic" data-ic="gear"></span></button>
 </header>
 
@@ -438,9 +489,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   <div class="group">
     <div class="item">
       <div class="combo">
-        <input type="text" id="fGenre" placeholder="未分類" autocomplete="off" autocapitalize="off"
-               role="combobox" aria-expanded="false" aria-controls="genreMenu">
-        <div class="combo-menu" id="genreMenu" role="listbox" hidden></div>
+        <input type="hidden" id="fGenre">
+        <button type="button" class="select-btn" id="fGenreBtn" aria-label="グループ"></button>
       </div>
     </div>
   </div>
@@ -448,14 +498,16 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   <div id="cardExtra">
     <div class="section-title">操作</div>
     <div class="group">
+      <button type="button" id="cardTweet" class="list-btn chev"><span class="ico ic" data-ic="quote"></span>
+        <span class="lbl">Twitterを開く</span></button>
+      <button type="button" id="cardCopy" class="list-btn chev"><span class="ico ic" data-ic="copy"></span>
+        <span class="lbl">本文をコピー</span></button>
       <div class="item">
         <div class="switch-row">
           <label class="name name-row" for="cardEnabled"><span class="ic" data-ic="power"></span>パレットの有効化</label>
           <span class="switch"><input type="checkbox" id="cardEnabled" role="switch"><span class="track"></span></span>
         </div>
       </div>
-      <button type="button" id="cardCopy" class="list-btn chev"><span class="ico ic" data-ic="copy"></span>
-        <span class="lbl">本文をコピー</span></button>
       <button type="button" id="cardDelete" class="list-btn chev danger"><span class="ico ic" data-ic="trash"></span>
         <span class="lbl">このパレットを削除</span></button>
     </div>
@@ -473,12 +525,12 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   </div>
   <div class="sheet-body">
   <!-- 使い方（一覧の「使い方」と同じ見た目。× で閉じると次からは出さない） -->
-  <div class="tip tw-tip" id="twTip">
+  <div class="tip tw-tip" id="twTip" data-tip="quote">
     <div class="tip-head"><span>使い方</span>
       <button type="button" class="tip-close" id="twTipClose" aria-label="使い方を閉じる">×</button></div>
     <ul>
-      <li><span class="tip-ico ic" data-ic="copy" aria-hidden="true"></span><span><span class="ph"><b>iPhone</b>：</span><span class="ph">Twitterアプリで</span><span class="ph">ツイートの</span><span class="ph"><b>共有</b>から</span><span class="ph"><b>リンクをコピー</b>して、</span><span class="ph">下の</span><span class="ph">URL欄に</span><span class="ph">貼り付けます</span></span></li>
-      <li><span class="tip-ico ic" data-ic="inbox" aria-hidden="true"></span><span><span class="ph"><b>Android</b>：</span><span class="ph">このアプリを</span><span class="ph"><b>ホーム画面に追加</b>しておくと、</span><span class="ph">Twitterアプリで</span><span class="ph">ツイートの</span><span class="ph"><b>共有</b>から</span><span class="ph"><b>タグパレット</b>を</span><span class="ph">選ぶと、</span><span class="ph">この画面が</span><span class="ph">開きます</span></span></li>
+      <li><span class="tip-ico ic" data-ic="apple" aria-hidden="true"></span><span><span class="ph"><b>iPhone</b>：</span><span class="ph">Twitterアプリで</span><span class="ph">ツイートの</span><span class="ph"><b>共有</b>から</span><span class="ph"><b>リンクをコピー</b>して、</span><span class="ph">下の</span><span class="ph">URL欄に</span><span class="ph">貼り付けます</span></span></li>
+      <li><span class="tip-ico ic" data-ic="android" aria-hidden="true"></span><span><span class="ph"><b>Android</b>：</span><span class="ph">このアプリを</span><span class="ph"><b>ホーム画面に追加</b>しておくと、</span><span class="ph">Twitterアプリで</span><span class="ph">ツイートの</span><span class="ph"><b>共有</b>から</span><span class="ph"><b>タグパレット</b>を</span><span class="ph">選ぶと、</span><span class="ph">この画面が</span><span class="ph">開きます</span></span></li>
     </ul>
   </div>
   <div class="section-title">ツイートのURL</div>
@@ -511,28 +563,50 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   </div>
 </dialog>
 
-<!-- タップしたとき「毎回選ぶ」のメニュー -->
-<dialog id="actDlg">
+
+<!-- グループ一覧（ヘッダーのボタンで開く）：タップで編集、≡ ドラッグで並べ替え -->
+<dialog id="groupDlg">
   <div class="sheet-head">
-    <button type="button" id="actCancel" class="text-btn">キャンセル</button>
-    <h2><span class="ic" data-ic="tap"></span><span>パレット</span></h2>
-    <span class="text-btn head-spacer" aria-hidden="true">キャンセル</span>
+    <span class="text-btn head-spacer" aria-hidden="true">閉じる</span>
+    <h2><span class="ic" data-ic="layers"></span>グループ</h2>
+    <button type="button" id="groupClose" class="pill-btn">閉じる</button>
   </div>
   <div class="sheet-body">
-  <div class="group">
-    <div class="item"><div class="share-src" id="actSrc"></div></div>
+  <div class="tip tw-tip" id="groupTip" data-tip="group">
+    <div class="tip-head"><span>使い方</span>
+      <button type="button" class="tip-close" aria-label="使い方を閉じる">×</button></div>
+    <ul><li><span class="tip-ico ic" data-ic="tap" aria-hidden="true"></span><span><span class="ph">グループを</span><span class="ph"><b>タップ</b>すると、</span><span class="ph">名前と色を</span><span class="ph">変更できます</span></span></li></ul>
   </div>
-  <div class="section-title">どうしますか？</div>
-  <div class="group">
-    <button type="button" class="list-btn chev" data-act="twitter"><span class="ico ic" data-ic="quote"></span>
-      <span class="lbl">Twitterを開く</span></button>
-    <button type="button" class="list-btn chev" data-act="copy"><span class="ico ic" data-ic="copy"></span>
-      <span class="lbl">クリップボードにコピー</span></button>
-    <button type="button" class="list-btn chev" data-act="edit"><span class="ico ic" data-ic="edit"></span>
-      <span class="lbl">編集する</span></button>
-  </div>
+  <div class="cards group-cards" id="groupCards"></div>
+  <div class="foot-hint" id="groupHint" hidden>まだグループがありません。パレットの編集画面でグループを付けられます。</div>
   </div>
 </dialog>
+
+<!-- グループの編集（名前と色） -->
+<dialog id="colorDlg">
+  <div class="sheet-head">
+    <button type="button" id="colorCancel" class="text-btn">キャンセル</button>
+    <h2><span class="ic" data-ic="folder"></span>グループの編集</h2>
+    <button type="button" id="colorSave" class="pill-btn">保存</button>
+  </div>
+  <div class="sheet-body">
+  <div class="section-title first">名前</div>
+  <div class="group"><div class="item">
+    <input type="text" id="groupName" autocomplete="off" autocapitalize="off" placeholder="グループ名">
+  </div></div>
+  <div class="err" id="groupNameErr"></div>
+  <div class="section-title">色</div>
+  <div class="group"><div class="item"><div class="swatches" id="swatches"></div></div></div>
+  <div class="section-title">操作</div>
+  <div class="group">
+    <button type="button" id="groupDelete" class="list-btn chev danger"><span class="ico ic" data-ic="trash"></span>
+      <span class="lbl">このグループを削除<span class="sub" id="groupDeleteSub"></span></span></button>
+  </div>
+  <!-- 虹色の丸を押したときに開く、端末の色えらび（見えない） -->
+  <input type="color" id="customColor" class="visually-hidden" aria-label="自由に色を選ぶ" tabindex="-1">
+  </div>
+</dialog>
+
 
 <!-- 設定 -->
 <dialog id="menuDlg">
@@ -570,13 +644,9 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       <select class="plain" id="tapAction" aria-label="タップしたときの動作">
         <option value="twitter">Twitterを開く</option>
         <option value="copy">クリップボードにコピー</option>
-        <option value="menu">毎回選ぶ（メニューを開く）</option>
+        <option value="edit">編集画面を開く</option>
       </select>
       <div class="hint" id="tapHint"></div>
-    </div>
-    <div class="item">
-      <div class="name name-row"><span class="ic" data-ic="folder"></span>起動時に表示するグループ</div>
-      <select class="plain" id="defaultGenre" aria-label="起動時に表示するグループ"></select>
     </div>
     <div class="item">
       <div class="name name-row"><span class="ic" data-ic="theme"></span>テーマ</div>
@@ -679,16 +749,25 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   }
 
   // ---------- 保存まわり ----------
-  const defaultSettings = { tapAction: 'twitter', genre: ALL, theme: 'auto', tips: true, aboutTips: true, quoteTips: true };
+  const defaultSettings = { tapAction: 'twitter', genre: ALL, theme: 'auto', closedTips: [], viewMode: 'group' };
   function migrateSettings(s) {
     s = { ...(s || {}) };
     // 以前の「アプリで開く」「ブラウザで開く（x）」などは「Twitterを開く」にまとめる
-    if (!['copy', 'menu'].includes(s.tapAction)) s.tapAction = 'twitter';
-    s = { ...defaultSettings, ...s };
+    if (s.tapAction === 'menu') s.tapAction = 'edit';   // 以前の「毎回選ぶ」は編集画面を開くに
+    if (!['copy', 'edit'].includes(s.tapAction)) s.tapAction = 'twitter';
+    // 以前の「使い方」ごとの true/false は、閉じた使い方の名前の配列にまとめる
+    const closed = Array.isArray(s.closedTips) ? s.closedTips.filter(t => typeof t === 'string') : [];
+    for (const [old, id] of [['tips', 'howto'], ['aboutTips', 'about'], ['quoteTips', 'quote']]) {
+      if (s[old] === false && !closed.includes(id)) closed.push(id);
+      delete s[old];
+    }
+    s = { ...defaultSettings, ...s, closedTips: closed };
     if (!['auto', 'light', 'dark'].includes(s.theme)) s.theme = 'auto';
-    s.tips = s.tips !== false;
-    s.quoteTips = s.quoteTips !== false;
-    s.aboutTips = s.aboutTips !== false;
+    s.groupOrder = Array.isArray(s.groupOrder) ? s.groupOrder.filter(g => typeof g === 'string') : [];
+    s.groupColors = (s.groupColors && typeof s.groupColors === 'object') ? Object.fromEntries(
+      Object.entries(s.groupColors).filter(([, c]) => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c))) : {};
+    s.genre = ALL;   // グループでの絞り込みはやめた（いつも「すべて」）
+    if (!['group', 'recent'].includes(s.viewMode)) s.viewMode = 'group';
     delete s.openMode; delete s.openTarget; delete s.tipsDismissed; delete s.trailingSpace; delete s.bgDim;
     return s;
   }
@@ -724,13 +803,24 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   }
 
   // ---------- グループ ----------
-  // グループ一覧（名前の降順）。ヘッダーの切り替え・「すべて」の見出し・候補一覧で共通
-  function genres() {
-    const seen = [];
-    for (const i of state.items) if (i.genre && !seen.includes(i.genre)) seen.push(i.genre);
-    return seen.sort((a, b) => b.localeCompare(a, 'ja', { numeric: true }));
-  }
   const hasUncategorized = () => state.items.some(i => !i.genre);
+  // グループ（未分類 '' を含む）の並び。設定の「グループの並び順」で決めた順を優先し、
+  // 新しくできたグループ（未分類も）は先頭に。パレットが無くなったグループは位置を忘れる。ヘッダーの切り替え・「すべて」の見出し・候補一覧で共通
+  function groupOrder() {
+    const named = [];
+    for (const i of state.items) if (i.genre && !named.includes(i.genre)) named.push(i.genre);
+    named.sort((a, b) => b.localeCompare(a, 'ja', { numeric: true }));
+    const hasNone = hasUncategorized();
+    const all = [...(hasNone ? [''] : []), ...named];
+    // パレットが無くなったグループは並び順から外す（未分類も含む）。
+    // 並び順にまだ無いグループ（新しくできたもの）は先頭に置く。結果は並び順として覚えておく
+    const saved = (state.settings.groupOrder || []).filter(g => all.includes(g));
+    const order = [...all.filter(g => !saved.includes(g)), ...saved];
+    state.settings.groupOrder = order;
+    return [...order];
+  }
+  // 名前の付いたグループだけ（未分類を除く）
+  const genres = () => groupOrder().filter(g => g !== '');
   function currentGenre() {
     const g = state.settings.genre;
     if (g === ALL) return ALL;
@@ -738,45 +828,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     return ALL; // そのグループが無くなっていたら「すべて」に戻す
   }
   const genreLabel = (g) => g === ALL ? 'すべて' : (g === '' ? '未分類' : g);
-  function genreOptions() {
-    const opts = [ALL, ...genres()];
-    if (hasUncategorized() && genres().length) opts.push('');
-    return opts;
-  }
-  function fillGenreSelect(sel) {
-    const cur = currentGenre();
-    sel.innerHTML = '';
-    for (const g of genreOptions()) {
-      const o = document.createElement('option');
-      o.value = g; o.textContent = genreLabel(g);
-      if (g === cur) o.selected = true;
-      sel.appendChild(o);
-    }
-  }
-  function setGenre(g) { state.settings.genre = g; save(); render(); }
-  // ---------- ヘッダーのグループ切り替え（ドロップダウン） ----------
-  // タップ（クリック）で開閉する。メニューの外を押す・Esc でも閉じる。
-  let ddTimer = 0;
-  function renderGenreDD() {
-    const cur = currentGenre();
-    $('genreBtn').textContent = genreLabel(cur);
-    const count = (g) => g === ALL ? state.items.length : state.items.filter(i => i.genre === g).length;
-    $('genreList').innerHTML = genreOptions().map(g => `
-      <button type="button" class="genre-opt${g === cur ? ' sel' : ''}" role="option" aria-selected="${g === cur}" data-g="${esc(g)}">
-        <span class="g-check">${g === cur ? '✓' : ''}</span><span class="g-name">${esc(genreLabel(g))}</span><span class="g-count">${count(g)}</span>
-      </button>`).join('');
-  }
-  function openDD() { clearTimeout(ddTimer); $('genreList').classList.add('open'); $('genreBtn').setAttribute('aria-expanded', 'true'); }
-  function closeDD() { clearTimeout(ddTimer); $('genreList').classList.remove('open'); $('genreBtn').setAttribute('aria-expanded', 'false'); }
-  const ddOpen = () => $('genreList').classList.contains('open');
-  $('genreBtn').addEventListener('click', () => { ddOpen() ? closeDD() : openDD(); });
-  $('genreList').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-g]'); if (!b) return;
-    closeDD(); setGenre(b.dataset.g);
-  });
-  // メニューの外を押す・Esc で閉じる
-  document.addEventListener('pointerdown', (e) => { if (ddOpen() && !$('genreDD').contains(e.target)) closeDD(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && ddOpen()) closeDD(); });
+  // グループの色（settings.groupColors：グループ名 → 色。未分類は ''）
+  const groupColor = (g) => (state.settings.groupColors || {})[g] || '';
 
   // ---------- 青字ハイライト ----------
   const esc = (s) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -813,10 +866,11 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     it.uses = (it.uses || 0) + 1;
     save();
   }
-  // twitter / copy はすぐ実行。menu は選ぶダイアログを開く（使った記録は実行したときだけ）
+  // twitter / copy はすぐ実行。edit は編集画面を開く（Twitterを開く・コピーもそこからできる。使った記録は実行したときだけ）
   function onTap(item) {
     const action = state.settings.tapAction;
-    if (action === 'menu') { openActions(item); return; }
+    if (action === 'edit') { openEditor(indexOfId(item.id)); return; }
+    if (item.disabled) return;   // 無効なパレットはタップしても何もしない
     runAction(action, item);
   }
   function runAction(action, item) {
@@ -825,21 +879,24 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     if (action === 'copy') { copyText(t, 'コピーしました'); return; }
     openWeb(t);
   }
-  let actItem = null;
-  function openActions(item) {
-    actItem = item;
-    $('actSrc').innerHTML = highlight(item.text);
-    openDlg($('actDlg'));
+
+  // ---------- 使い方（閉じる・戻す） ----------
+  // 使い方には名前を付け、閉じたものの名前を settings.closedTips に記録する。
+  //   about … タグパレットとは / howto … 使い方 / quote … ツイートの引用 / group … グループ
+  const tipOpen = (id) => !(state.settings.closedTips || []).includes(id);
+  function closeTip(id) {
+    const list = state.settings.closedTips || [];
+    if (!list.includes(id)) state.settings.closedTips = [...list, id];
+    save();
   }
-  $('actCancel').addEventListener('click', () => closeDlg($('actDlg')));
-  $('actDlg').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-act]');
-    if (!b || !actItem) return;
-    const item = actItem, act = b.dataset.act;
-    closeDlg($('actDlg'));
-    if (act === 'edit') openEditor(indexOfId(item.id));
-    else runAction(act, item);
-  });
+  // 画面に最初から書いてある使い方（data-tip="名前"）：× で閉じる
+  function setupStaticTip(el) {
+    el.querySelector('.tip-close').addEventListener('click', () => {
+      el.classList.add('leaving');
+      setTimeout(() => { el.hidden = true; el.classList.remove('leaving'); closeTip(el.dataset.tip); }, 200);
+    });
+  }
+  const syncStaticTip = (el) => { el.hidden = !tipOpen(el.dataset.tip); };
 
   // ---------- チュートリアル ----------
   // 一覧の先頭に2枚のカードを出す。それぞれ × で閉じると、そのカードだけ次から出なくなる
@@ -866,25 +923,25 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   const tipIcon = (t) => t.ico
     ? `<span class="tip-ico" aria-hidden="true"><svg viewBox="0 0 24 24">${ICONS[t.ico] || ''}</svg></span>`
     : `<span class="tip-ico" aria-hidden="true">${t.text}</span>`;
-  function tipCard(key, title, body) {
+  function tipCard(id, title, body) {
     const el = document.createElement('div');
     el.className = 'tip';
     el.innerHTML = `<div class="tip-head"><span>${title}</span>
         <button type="button" class="tip-close" aria-label="${title}を閉じる">×</button></div>${body}`;
     el.querySelector('.tip-close').addEventListener('click', () => {
       el.classList.add('leaving');
-      setTimeout(() => { state.settings[key] = false; save(); render(); }, 200);
+      setTimeout(() => { closeTip(id); render(); }, 200);
     });
     return el;
   }
   function renderTips(list) {
-    if (state.settings.aboutTips) {
-      list.appendChild(tipCard('aboutTips', 'タグパレットとは', `
+    if (tipOpen('about')) {
+      list.appendChild(tipCard('about', 'タグパレットとは', `
         <img class="tip-ogp" src="ogp.png${OGP_V}" alt="パレットをタップすると、Twitterの投稿画面にそのまま入る様子" width="1200" height="630">
         <div class="tip-lead">${ABOUT_LEAD.map(l => `<p>${phrases(l)}</p>`).join('')}</div>`));
     }
-    if (state.settings.tips) {
-      list.appendChild(tipCard('tips', '使い方', `
+    if (tipOpen('howto')) {
+      list.appendChild(tipCard('howto', '使い方', `
         <ul>${TIPS.map(t => `<li>${tipIcon(t)}<span>${phrases(t.html)}</span></li>`).join('')}</ul>
         <p class="tip-foot">${phrases(TIPS_FOOT)}</p>`));
     }
@@ -892,7 +949,6 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
 
   // ---------- 描画 ----------
   function render() {
-    renderGenreDD();
     const list = $('list');
     list.innerHTML = '';
     const g = currentGenre();
@@ -905,9 +961,46 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       </div>`);
       return;
     }
+    // 最近使った順：グループに関係なく、最後に使った順に1列で並べる（まだ使っていないものは後ろ、元の並びのまま）
+    list.classList.toggle('recent', state.settings.viewMode === 'recent');
+    $('viewSelect').value = state.settings.viewMode; $('viewSelect')._sync?.();   // バックアップの読み込みなどで変わったときもそろえる
+    if (state.settings.viewMode === 'recent') {
+      const t = (i) => i.used ? Date.parse(i.used) : -Infinity;
+      const items = state.items.map((it, k) => [it, k]).sort((a, b) => (t(b[0]) - t(a[0])) || (a[1] - b[1])).map(([it]) => it);
+      // 直近（1時間以内）/ 今日 / 今週（月曜はじまり）/ 今月 / それ以前 / 未使用 に分けて見出しを付ける
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const week = today - ((now.getDay() + 6) % 7) * 86400000;
+      const month = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      const bucket = (i) => {
+        const u = t(i);
+        if (u === -Infinity) return '未使用';
+        if (u >= now.getTime() - 3600000) return '直近';
+        if (u >= today) return '今日';
+        if (u >= week) return '今週';
+        if (u >= month) return '今月';
+        return 'それ以前';
+      };
+      let cur = null, group = null, n = 0;
+      for (const item of items) {
+        const b = bucket(item);
+        if (b !== cur) {
+          cur = b;
+          const title = document.createElement('div');
+          title.className = 'section-title' + (n++ === 0 ? ' first' : '');
+          title.textContent = b;
+          list.appendChild(title);
+          group = document.createElement('div');
+          group.className = 'cards recent-cards';
+          list.appendChild(group);
+        }
+        group.appendChild(makeRow(item));
+      }
+      return;
+    }
     // 「すべて」はグループごとにグループ分けして表示
     const sections = g === ALL
-      ? [...genres(), ...(hasUncategorized() ? [''] : [])].map(x => [x, state.items.filter(i => i.genre === x)])
+      ? groupOrder().map(x => [x, state.items.filter(i => i.genre === x)])
       : [[g, state.items.filter(i => i.genre === g)]];
     // グループ名の見出しは常に表示する（全部が同じグループ・未分類のときや、グループで絞り込んだときも）
     const showTitles = true;
@@ -923,19 +1016,22 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       }
       const group = document.createElement('div');
       group.className = 'cards';
-      for (const item of items) {
-        const el = document.createElement('div');
-        el.className = 'row' + (item.disabled ? ' disabled' : '');
-        el.dataset.id = item.id;
-        if (item.disabled) el.setAttribute('aria-disabled', 'true');
-        el.innerHTML = `<div class="body">${highlight(item.text)}</div>
-          <div class="handle" aria-label="ドラッグで並べ替え">≡</div>`;
-        setupRow(el, item);
-        setupDrag(el.querySelector('.handle'), el);
-        group.appendChild(el);
-      }
+      for (const item of items) group.appendChild(makeRow(item));
       list.appendChild(group);
     });
+  }
+  // パレット1件分のカード
+  function makeRow(item) {
+    const el = document.createElement('div');
+    el.className = 'row' + (item.disabled ? ' disabled' : '') + (groupColor(item.genre) ? ' colored' : '');
+    if (groupColor(item.genre)) el.style.setProperty('--gc', groupColor(item.genre));
+    el.dataset.id = item.id;
+    if (item.disabled) el.setAttribute('aria-disabled', 'true');
+    el.innerHTML = `<div class="body">${highlight(item.text)}</div>
+      <div class="handle" aria-label="ドラッグで並べ替え">≡</div>`;
+    setupRow(el, item);
+    setupDrag(el.querySelector('.handle'), el);
+    return el;
   }
   const indexOfId = (id) => state.items.findIndex(i => i.id === id);
 
@@ -1003,7 +1099,6 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       e.preventDefault();
       if (longFired || tapBlocked() || moved) return;
       if (downAt && Date.now() - downAt >= LONG_MS) { fireLong(); return; }   // 長く押していた → 長押し扱い
-      if (item.disabled) return;   // 無効なパレットはタップしても何もしない
       onTap(item);
     });
   }
@@ -1011,7 +1106,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   // ---------- ドラッグで並べ替え（右端の ≡） ----------
   // 持ち上げた行は指に追従し、他の行は FLIP アニメーションで滑らかによける。
   // 並べ替えは同じグループ（グループ）の中だけ。
-  function setupDrag(handle, row) {
+  function setupDrag(handle, row, onDrop = saveOrder) {
     let active = false, startPageY = 0, startTop = 0, lastClientY = 0, raf = 0, group = null;
     handle.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
@@ -1096,7 +1191,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
         row.classList.remove('dropping');
         for (const c of group.children) { c.style.transition = ''; c.style.transform = ''; }
       }, 220);
-      saveOrder();
+      onDrop();
     }
   }
   // 画面上の並びを、全体の並びに反映する（表示していない行の位置は変えない）
@@ -1127,6 +1222,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   }
   function closeDlg(dlg) {
     if (!dlg.open) return;
+    closePicker();
     dlg.classList.remove('show');
     clearTimeout(dlg._t);
     dlg._t = setTimeout(() => dlg.close(), 200);
@@ -1167,12 +1263,12 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     setIcon($('cardDlgIcon'), item ? 'edit' : 'add');
     $('fText').value = item ? item.text : '';
     // 新規は、いま表示しているグループを最初から入れておく
-    $('fGenre').value = item ? item.genre : (g === ALL ? '' : g);
+    setGenreField(item ? item.genre : (g === ALL ? '' : g));
     $('fErr').textContent = '';
     $('cardExtra').hidden = !item;
     $('cardEnabled').checked = !(item && item.disabled);
+    syncCardEnabled();
     $('cardUpdated').textContent = fmtDate(item && item.updated);
-    closeMenu();
     openDlg($('cardDlg'));
     updatePreview();
     focusText();
@@ -1185,52 +1281,114 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     ta.setSelectionRange(ta.value.length, ta.value.length);
   }
 
-  // ---------- グループ入力（コンボボックス） ----------
-  const gInput = $('fGenre'), gMenu = $('genreMenu');
-  let menuOpts = [], activeIdx = -1, typed = false;
-  function buildMenu() {
-    const v = gInput.value.trim();
-    const all = genres();
-    // フォーカスしただけのときは全候補、入力したら絞り込み
-    const list = typed && v ? all.filter(x => x.toLowerCase().includes(v.toLowerCase())) : all;
-    menuOpts = [];
-    if (typed && v && !all.includes(v)) menuOpts.push({ value: v, label: `＋ 新しいグループ「${v}」を作る`, cls: 'new' });
-    for (const x of list) menuOpts.push({ value: x, label: x, cls: x === v ? 'sel' : '' });
-    menuOpts.push({ value: '', label: '未分類', cls: 'muted' + (v === '' ? ' sel' : '') });
-    activeIdx = -1;
-    gMenu.innerHTML = menuOpts.map((o, k) =>
-      `<button type="button" class="combo-opt ${o.cls}" role="option" data-k="${k}">${esc(o.label)}</button>`).join('');
+  // ---------- 選択肢のメニュー（欄の下にふわっと出す） ----------
+  // anchor: 押した欄。options: [{ value, label, color?, muted? }]。allowNew: 新しい名前も入力できる（グループ用）
+  let pickMenu = null, pickCb = null, pickAnchor = null;
+  function closePicker() {
+    if (!pickMenu) return;
+    const m = pickMenu; pickMenu = null; pickCb = null; pickAnchor = null;
+    m.classList.remove('open');
+    setTimeout(() => { try { m.hidePopover?.(); } catch {} m.remove(); }, 150);
   }
-  function openMenu() { buildMenu(); gMenu.hidden = false; gInput.setAttribute('aria-expanded', 'true'); }
-  function closeMenu() { gMenu.hidden = true; gInput.setAttribute('aria-expanded', 'false'); typed = false; }
-  function pick(k) { gInput.value = menuOpts[k].value; closeMenu(); gInput.blur(); }
-  gInput.addEventListener('focus', () => { typed = false; openMenu(); });
-  gInput.addEventListener('click', () => { if (gMenu.hidden) { typed = false; openMenu(); } });
-  gInput.addEventListener('input', () => { typed = true; openMenu(); });
-  gInput.addEventListener('blur', () => setTimeout(closeMenu, 150));
-  // 候補を押してもフォーカスが外れて閉じないように
-  gMenu.addEventListener('pointerdown', (e) => e.preventDefault());
-  gMenu.addEventListener('click', (e) => { const b = e.target.closest('[data-k]'); if (b) pick(+b.dataset.k); });
-  gInput.addEventListener('keydown', (e) => {
-    if (gMenu.hidden) return;
-    const opts = gMenu.querySelectorAll('.combo-opt');
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      activeIdx = (activeIdx + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
-      opts.forEach((o, k) => o.classList.toggle('active', k === activeIdx));
-      opts[activeIdx].scrollIntoView({ block: 'nearest' });
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (activeIdx >= 0) pick(activeIdx); else { closeMenu(); gInput.blur(); }
-    } else if (e.key === 'Escape') { e.preventDefault(); closeMenu(); }
+  function openPicker(anchor, { options, value, allowNew = false, onPick }) {
+    // 開いているときにもう一度押したら閉じるだけ
+    if (pickMenu && pickAnchor === anchor) { closePicker(); return; }
+    closePicker();
+    pickAnchor = anchor;
+    pickCb = onPick;
+    const m = document.createElement('div');
+    m.className = 'genre-menu pick-menu';
+    m.setAttribute('role', 'listbox');
+    m.innerHTML = (allowNew ? `<div class="pick-new"><input type="text" placeholder="新しいグループ名" autocomplete="off" autocapitalize="off">
+        <button type="button" class="pill-btn">決定</button></div><div class="pick-err"></div>` : '')
+      + options.map(o => `<button type="button" class="genre-opt${o.value === value ? ' sel' : ''}${o.muted ? ' muted' : ''}" role="option" data-v="${esc(o.value)}">
+          <span class="g-check">${o.value === value ? '✓' : ''}</span>
+          ${o.color !== undefined ? `<span class="pick-dot${o.color ? '' : ' none'}"${o.color ? ` style="--gc:${o.color}"` : ''}></span>` : ''}
+          <span class="g-name">${esc(o.label)}</span></button>`).join('');
+    // 欄と同じダイアログの中に置く（ダイアログが開いている間、外側は操作できない状態になるため）。
+    // そのうえで一番手前（トップレイヤー）に出し、ダイアログの開閉アニメーションや枠に影響されないようにする
+    (anchor.closest('dialog') || document.body).appendChild(m);
+    if (typeof m.showPopover === 'function') { m.popover = 'manual'; m.showPopover(); }
+    // 位置：欄のすぐ下。画面の下に入りきらなければ欄の上。左右は画面からはみ出さないように
+    const r = anchor.getBoundingClientRect();
+    m.style.minWidth = r.width + 'px';
+    const mw = m.offsetWidth, mh = m.offsetHeight;
+    let top = r.bottom + 6;
+    if (top + mh > innerHeight - 8 && r.top - mh - 6 > 8) top = r.top - mh - 6;
+    const left = Math.max(8, Math.min(r.left, innerWidth - mw - 8));
+    m.style.top = top + 'px'; m.style.left = left + 'px';
+    m.style.transformOrigin = top < r.top ? 'bottom left' : 'top left';
+    m.getBoundingClientRect();
+    m.classList.add('open');
+    pickMenu = m; pickAnchor = anchor;
+    const done = (v) => { const cb = pickCb; closePicker(); if (cb) cb(v); };
+    m.addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (b) done(b.dataset.v); });
+    if (allowNew) {
+      const input = m.querySelector('.pick-new input'), errEl = m.querySelector('.pick-err');
+      const submit = () => {
+        const v = input.value.trim();
+        if (!v) { errEl.textContent = 'グループ名を入力してください'; return; }
+        if (v === '未分類') { errEl.textContent = '「未分類」は使えません'; return; }
+        done(v);
+      };
+      m.querySelector('.pick-new .pill-btn').addEventListener('click', submit);
+      input.focus({ preventScroll: true });   // 開いたらすぐ新しいグループ名を打てるように
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+    }
+  }
+  // メニューの外を押す・Esc・スクロールで閉じる
+  document.addEventListener('pointerdown', (e) => {
+    if (pickMenu && !pickMenu.contains(e.target) && !(pickAnchor && pickAnchor.contains(e.target))) closePicker();
+  }, true);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pickMenu) { e.preventDefault(); closePicker(); } }, true);
+  // （新しいグループ名を入力中は、キーボードが出て画面が動いても閉じない）
+  document.addEventListener('scroll', (e) => {
+    if (pickMenu && !pickMenu.contains(e.target) && !pickMenu.contains(document.activeElement)) closePicker();
+  }, true);
+
+  // ネイティブのセレクトを、押すとポップアップで選ぶボタンに置き換える（値と change イベントは元のセレクトのまま）
+  function enhanceSelect(sel, title) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'select-btn' + (sel.classList.contains('view-select') ? ' view-select' : '');
+    btn.setAttribute('aria-label', sel.getAttribute('aria-label') || title);
+    sel.hidden = true;
+    sel.after(btn);
+    sel._sync = () => { btn.textContent = sel.options[sel.selectedIndex]?.text || ''; };
+    sel._sync();
+    btn.addEventListener('click', () => openPicker(btn, {
+      value: sel.value,
+      options: [...sel.options].map(o => ({ value: o.value, label: o.text })),
+      onPick: (v) => { if (v === sel.value) return; sel.value = v; sel._sync(); sel.dispatchEvent(new Event('change')); }
+    }));
+  }
+
+  // ---------- グループ入力（ポップアップで選ぶ） ----------
+  // 値は見えない #fGenre に入れ、ボタンにはグループ名（未分類は薄い文字）を出す
+  function setGenreField(v) {
+    $('fGenre').value = v;
+    $('fGenreBtn').textContent = v || '未分類';
+    $('fGenreBtn').classList.toggle('placeholder', !v);
+  }
+  $('fGenreBtn').addEventListener('click', () => {
+    openPicker($('fGenreBtn'), {
+      allowNew: true, value: $('fGenre').value,
+      options: [...genres().map(g => ({ value: g, label: g, color: groupColor(g) })), { value: '', label: '未分類', color: groupColor(''), muted: true }],
+      onPick: (v) => setGenreField(v)
+    });
   });
 
   // 有効・無効はその場で切り替えて保存する（コピー・削除と同じく、保存ボタンを待たない）
+  // 無効にしたパレットでは、ツイートから引用・Twitterを開く・本文をコピーも使えないようにする
+  function syncCardEnabled() {
+    const off = !$('cardEnabled').checked && editingIndex >= 0;
+    for (const id of ['twBtn', 'cardTweet', 'cardCopy']) $(id).disabled = off;
+  }
   $('cardEnabled').addEventListener('change', (e) => {
     if (editingIndex < 0) return;
     const it = state.items[editingIndex];
     if (e.target.checked) delete it.disabled; else it.disabled = true;
-    save(); render();
+    save(); render(); syncCardEnabled();
     toast(e.target.checked ? '有効にしました' : '無効にしました', 'ok');
   });
   $('cardDelete').addEventListener('click', () => {
@@ -1238,6 +1396,13 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     if (!confirm('このパレットを削除しますか？')) return;
     state.items.splice(editingIndex, 1); save(); render();
     closeDlg($('cardDlg')); toast('削除しました', 'ok');
+  });
+  // 編集中の本文でそのまま Twitter を開く（保存前の内容でも開ける）
+  $('cardTweet').addEventListener('click', () => {
+    const text = $('fText').value.replace(/\s+$/, '');
+    if (!text) return;
+    if (editingIndex >= 0) recordUse(state.items[editingIndex].id);
+    openWeb(postText(text));
   });
   $('cardCopy').addEventListener('click', () => {
     const text = $('fText').value.replace(/\s+$/, '');
@@ -1283,7 +1448,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       // 本文かグループが変わったときだけ更新日を新しくする
       const it = state.items[editingIndex];
       if (it.text !== text || it.genre !== genre) Object.assign(it, { text, genre, updated: now });
-    } else state.items.push({ id: uid(), text, genre, created: now, updated: now });
+    } else state.items.unshift({ id: uid(), text, genre, created: now, updated: now });   // 新しいパレットはグループの先頭に
     // 別のグループで保存したら、行が消えたように見えないよう表示を切り替える
     const g = currentGenre();
     if (g !== ALL && g !== genre) state.settings.genre = genre;
@@ -1297,7 +1462,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   const TAP_HINTS = {
     twitter: 'Twitterの投稿画面を開きます。',
     copy: 'クリップボードにコピーします。好きなアプリに貼り付けて使えます。',
-    menu: 'タップするたびに、Twitterを開く・コピー・編集から選べます。'
+    edit: 'パレットの編集画面を開きます。'
   };
   function applyTheme() {
     const t = state.settings.theme;
@@ -1312,35 +1477,156 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   $('themeSelect').addEventListener('change', (e) => { state.settings.theme = e.target.value; save(); applyTheme(); });
   // 閉じた「使い方」（一覧・ツイートの引用）をどちらも戻す
   $('tipsReset').addEventListener('click', () => {
-    state.settings.tips = true; state.settings.aboutTips = true; state.settings.quoteTips = true;
+    state.settings.closedTips = [];
     save(); render();
     toast('使い方を表示しました', 'ok');
   });
   function syncTapAction() {
-    $('tapAction').value = state.settings.tapAction;
+    $('tapAction').value = state.settings.tapAction; $('tapAction')._sync?.();
     $('tapHint').textContent = TAP_HINTS[state.settings.tapAction];
   }
   $('tapAction').addEventListener('change', (e) => { state.settings.tapAction = e.target.value; save(); syncTapAction(); });
+  // ---------- グループ（並び替え・色） ----------
+  // ダークでもライトでも見やすい、中くらいの明るさの色
+  // Tailwind CSS の各色の 500（中くらいの明るさ）。ダークでもライトでも見やすい
+  const COLOR_PRESETS = [
+    ['赤', '#ef4444'], ['オレンジ', '#f97316'], ['黄', '#f59e0b'], ['黄緑', '#84cc16'],
+    ['緑', '#22c55e'], ['青緑', '#14b8a6'], ['水色', '#0ea5e9'], ['青', '#3b82f6'],
+    ['紫', '#8b5cf6'], ['ピンク', '#ec4899'], ['茶', '#a16207'], ['グレー', '#6b7280']
+  ];
+
+  // ---------- グループ一覧（ヘッダーのボタンで開く）：タップで編集、≡ ドラッグで並べ替え ----------
+  function renderGroupList() {
+    const order = groupOrder();
+    $('groupHint').hidden = order.length > 0;
+    syncStaticTip($('groupTip'));
+    const count = (g) => state.items.filter(i => i.genre === g).length;
+    $('groupCards').innerHTML = order.map(g => {
+      const c = groupColor(g);
+      return `<div class="row${c ? ' colored' : ''}" data-g="${esc(g)}"${c ? ` style="--gc:${c}"` : ''}>
+        <div class="body">
+          <span class="g-name${g === '' ? ' muted' : ''}">${esc(genreLabel(g))}</span>
+          <span class="g-count">${count(g)}件</span>
+        </div>
+        <div class="handle" aria-label="ドラッグで並べ替え">≡</div>
+      </div>`;
+    }).join('');
+    for (const row of $('groupCards').querySelectorAll('.row')) setupDrag(row.querySelector('.handle'), row, saveGroupOrder);
+  }
+  function saveGroupOrder() {
+    state.settings.groupOrder = [...$('groupCards').querySelectorAll('.row')].map(r => r.dataset.g);
+    save(); render();
+  }
+  // 並べ方の切り替え（グループ別 / 最近使った）。設定に保存して次回も同じ並べ方で開く
+  $('viewSelect').addEventListener('change', (e) => { state.settings.viewMode = e.target.value; save(); render(); window.scrollTo(0, 0); });
+  $('groupBtn').addEventListener('click', () => { renderGroupList(); openDlg($('groupDlg')); });
+  $('groupClose').addEventListener('click', () => closeDlg($('groupDlg')));
+  setupStaticTip($('groupTip'));
+  $('groupCards').addEventListener('click', (e) => {
+    if (e.target.closest('.handle')) return;
+    const row = e.target.closest('.row[data-g]');
+    if (row) openGroupEdit(row.dataset.g);
+  });
+
+  // ---------- グループの編集（名前・色） ----------
+  // グループ一覧のカードをタップで開く。色は選んだだけでは反映せず、「保存」で名前と一緒に反映する
+  let colorTarget = null, pickedColor = '', originalColor = '';
+  function renderSwatches() {
+    const cur = pickedColor;
+    $('swatches').innerHTML = `<button type="button" class="swatch none${cur ? '' : ' sel'}" data-sw="" aria-label="色なし" title="色なし"></button>`
+      + COLOR_PRESETS.map(([name, c]) => `<button type="button" class="swatch${cur.toLowerCase() === c ? ' sel' : ''}" data-sw="${c}" style="--sw:${c}" aria-label="${name}" title="${name}"></button>`).join('')
+      // 最後に虹色の丸：押すと好きな色を選べる（プリセット以外の色を選んでいるときは、真ん中にその色）
+      + (() => { const custom = cur && !COLOR_PRESETS.some(([, c]) => c === cur.toLowerCase());
+          return `<button type="button" class="swatch rainbow${custom ? ' sel' : ''}" id="swCustom"${custom ? ` style="--sw:${cur}"` : ''} aria-label="自由に選ぶ" title="自由に選ぶ"></button>`; })();
+  }
+  function openGroupEdit(g) {
+    colorTarget = g;
+    pickedColor = originalColor = groupColor(colorTarget);
+    const isNone = colorTarget === '';
+    // 未分類は空欄（「未分類」と薄く表示）。名前を入れて保存すると、中のパレットがそのグループに移る
+    $('groupName').value = isNone ? '' : colorTarget;
+    $('groupName').placeholder = isNone ? '未分類' : 'グループ名';
+    $('groupNameErr').textContent = '';
+    renderSwatches();
+    $('groupDeleteSub').textContent = `中のパレット${state.items.filter(i => i.genre === g).length}件も削除します`;
+    $('customColor').value = pickedColor || '#3b82f6';
+    openDlg($('colorDlg'));
+  }
+  $('swatches').addEventListener('click', (e) => {
+    if (e.target.closest('#swCustom')) {
+      // 端末の色えらびを開く（対応していれば showPicker、なければクリック）
+      const input = $('customColor');
+      try { input.showPicker ? input.showPicker() : input.click(); } catch { input.click(); }
+      return;
+    }
+    const b = e.target.closest('[data-sw]');
+    if (!b) return;
+    pickedColor = b.dataset.sw;
+    renderSwatches();
+  });
+  $('customColor').addEventListener('change', () => { pickedColor = $('customColor').value; renderSwatches(); });
+  $('colorCancel').addEventListener('click', () => closeDlg($('colorDlg')));
+  // グループの削除：中のパレットもまとめて削除する（元に戻せないので確認する）
+  $('groupDelete').addEventListener('click', () => {
+    if (colorTarget == null) return;
+    const g = colorTarget, n = state.items.filter(i => i.genre === g).length;
+    if (!confirm(`「${genreLabel(g)}」と、その中のパレット${n}件を削除します。
+元に戻せません。よろしいですか？`)) return;
+    state.items = state.items.filter(i => i.genre !== g);
+    state.settings.groupOrder = (state.settings.groupOrder || []).filter(x => x !== g);
+    const colors = { ...(state.settings.groupColors || {}) }; delete colors[g];
+    state.settings.groupColors = colors;
+    save(); render(); renderGroupList();
+    closeDlg($('colorDlg'));
+    toast('削除しました', 'ok');
+  });
+  $('colorSave').addEventListener('click', () => {
+    if (colorTarget == null) return;
+    const from = colorTarget;
+    let to = $('groupName').value.trim();
+    if (from === '' && !to) to = '';   // 未分類のまま
+    else {
+      if (!to) { $('groupNameErr').textContent = 'グループ名を入力してください'; $('groupName').focus(); return; }
+      if (to === '未分類') { $('groupNameErr').textContent = '「未分類」は使えません'; $('groupName').focus(); return; }
+      // すでにある別のグループ名にしたときは、まとめてよいか確認する
+      if (to !== from && groupOrder().includes(to) && !confirm(`「${to}」はすでにあります。2つのグループをまとめますか？`)) return;
+    }
+    const colors = { ...(state.settings.groupColors || {}) };
+    // 別のグループにまとめるとき、色を選び直していなければ、まとめ先の色をそのまま残す
+    const merging = to !== from && groupOrder().includes(to);
+    const keepTargetColor = merging && pickedColor === originalColor;
+    if (to !== from) {
+      // パレットのグループ名・並び順・色を新しい名前に付け替える（並び順は今の位置のまま）
+      const order = groupOrder().map(g => g === from ? to : g);
+      state.settings.groupOrder = order.filter((g, k) => order.indexOf(g) === k);
+      for (const it of state.items) if (it.genre === from) it.genre = to;
+      delete colors[from];
+    }
+    if (!keepTargetColor) { if (pickedColor) colors[to] = pickedColor; else delete colors[to]; }
+    state.settings.groupColors = colors;
+    save(); render(); renderGroupList();
+    closeDlg($('colorDlg'));
+    toast('保存しました', 'ok');
+  });
+
   $('menuBtn').addEventListener('click', () => {
-    fillGenreSelect($('defaultGenre'));
     syncTapAction();
-    $('themeSelect').value = state.settings.theme;
+    $('themeSelect').value = state.settings.theme; $('themeSelect')._sync?.();
     $('importTextArea').hidden = true;
     $('installHelp').hidden = true;
     syncInstall();
     openDlg($('menuDlg'));
   });
   $('menuClose').addEventListener('click', () => closeDlg($('menuDlg')));
-  $('defaultGenre').addEventListener('change', (e) => setGenre(e.target.value));
 
   // ---------- エクスポート ----------
   // 保存しているものを丸ごと書き出す（本文・グループ・作成日・更新日・最終利用日・利用回数・有効/無効・設定すべて）
   function exportJSON() {
-    const { genre, ...settings } = state.settings;
+    const { genre, ...settings } = state.settings;   // genre（以前の絞り込み）は書き出さない
     return JSON.stringify({
       app: 'tag-palette', appVersion, version: 4, exportedAt: new Date().toISOString(),
       items: state.items.map(({ id, ...rest }) => rest),
-      settings: { ...settings, genre: genre === ALL ? null : genre }
+      settings
     }, null, 2);
   }
   $('exportFile').addEventListener('click', async () => {
@@ -1433,6 +1719,13 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     hash: '<path d="M10 3.5 8 20.5M16 3.5l-2 17M4.5 8.8h16M3.5 15.2h16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
     // 受け取る（トレイに矢印）
     inbox: '<path d="M12 2.5a1.4 1.4 0 0 1 1.4 1.4v6.7l1.9-1.9a1.4 1.4 0 1 1 2 2l-4.3 4.3a1.4 1.4 0 0 1-2 0l-4.3-4.3a1.4 1.4 0 1 1 2-2l1.9 1.9V3.9A1.4 1.4 0 0 1 12 2.5z"/><path d="M3 14.2a1.2 1.2 0 0 1 1.2-1.2h3.1a1 1 0 0 1 .9.6l.7 1.5a1.5 1.5 0 0 0 1.4.9h3.4a1.5 1.5 0 0 0 1.4-.9l.7-1.5a1 1 0 0 1 .9-.6h3.1a1.2 1.2 0 0 1 1.2 1.2V18a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/>',
+    // （グループのボタンは folder を使う）
+    // 重なった板（グループ）
+    layers: '<path d="M12 2.6a1.6 1.6 0 0 1 .8.2l8.4 4.6a1 1 0 0 1 0 1.8l-8.4 4.6a1.6 1.6 0 0 1-1.6 0L2.8 9.2a1 1 0 0 1 0-1.8l8.4-4.6a1.6 1.6 0 0 1 .8-.2z"/><path d="M3.9 11.6 11.2 15.6a1.6 1.6 0 0 0 1.6 0l7.3-4 1.1.6a1 1 0 0 1 0 1.8l-8.4 4.6a1.6 1.6 0 0 1-1.6 0L2.8 14a1 1 0 0 1 0-1.8z" opacity=".75"/><path d="M3.9 16.4 11.2 20.4a1.6 1.6 0 0 0 1.6 0l7.3-4 1.1.6a1 1 0 0 1 0 1.8l-8.4 4.6a1.6 1.6 0 0 1-1.6 0l-8.4-4.6a1 1 0 0 1 0-1.8z" opacity=".5"/>',
+    // Android（ドロイド君の頭）
+    android: '<path d="M7.2 3.3a.6.6 0 0 1 .8.2l1.3 2.2A7.6 7.6 0 0 1 12 5.2c1 0 1.9.2 2.7.5L16 3.5a.6.6 0 1 1 1 .6l-1.3 2.2A7.5 7.5 0 0 1 19.5 12.5h-15a7.5 7.5 0 0 1 3.8-6.2L7 4.1a.6.6 0 0 1 .2-.8zM8.8 8.6a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6.4 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2zM4.5 14h15v4.5a2.5 2.5 0 0 1-2.5 2.5H7a2.5 2.5 0 0 1-2.5-2.5z"/>',
+    // iPhone（りんご）
+    apple: '<path d="M12 7.6C10.6 6.6 9.1 6.2 7.7 6.4 4.9 6.8 3.2 9.3 3.4 12.6c.2 3.6 2.2 7.4 4.6 8.6 1.2.6 2.4.2 4-.3 1.6.5 2.8.9 4 .3 1.6-.8 3-2.6 3.9-4.6-1.6-.7-2.6-2.2-2.6-4 0-1.6.8-3 2.1-3.7-1-1.5-2.5-2.4-4.2-2.5-1.2-.1-2.3.5-3.2 1.2z"/><path d="M12.2 5.6c-.1-1.8 1.4-3.4 3.4-3.6.1 1.9-1.4 3.5-3.4 3.6z"/>',
     // 電源（有効・無効）
     power: '<path d="M12 2.5a1.4 1.4 0 0 1 1.4 1.4v7.2a1.4 1.4 0 0 1-2.8 0V3.9A1.4 1.4 0 0 1 12 2.5z"/><path d="M7.1 5.6a1.4 1.4 0 0 1 .3 2A6.3 6.3 0 1 0 16.6 7.6a1.4 1.4 0 1 1 2.2-1.7A9.1 9.1 0 1 1 5.2 5.9a1.4 1.4 0 0 1 1.9-.3z"/>',
     // 引用（吹き出し）
@@ -1613,7 +1906,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   function openShare(text, target = 'new') {
     shareSeq++;
     shareTarget = target;
-    $('twTip').hidden = !state.settings.quoteTips;    $('shareFoot').textContent = target === 'editor'
+    syncStaticTip($('twTip'));    $('shareFoot').textContent = target === 'editor'
       ? '選んだ内容は、本文の最後に追加されます。'
       : '選ぶと、その内容でパレットの追加画面が開きます。';
     const m = text.match(TWEET_URL);
@@ -1629,11 +1922,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     else if (target === 'editor') $('twUrl').focus();
   }
   $('shareCancel').addEventListener('click', () => closeDlg($('shareDlg')));
-  $('twTipClose').addEventListener('click', () => {
-    const tip = $('twTip');
-    tip.classList.add('leaving');
-    setTimeout(() => { tip.hidden = true; tip.classList.remove('leaving'); state.settings.quoteTips = false; save(); }, 200);
-  });
+  setupStaticTip($('twTip'));
   $('shareDlg').addEventListener('click', (e) => {
     const b = e.target.closest('[data-share]');
     if (!b || b.disabled) return;
@@ -1657,6 +1946,9 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   // ---------- 追加・編集画面の「ツイートから引用」 ----------
   $('twBtn').addEventListener('click', () => openShare('', 'editor'));
 
+  enhanceSelect($('viewSelect'), '並べ方');
+  enhanceSelect($('tapAction'), 'タップしたときの動作');
+  enhanceSelect($('themeSelect'), 'テーマ');
   applyTheme();
   render();
 

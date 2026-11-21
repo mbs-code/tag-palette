@@ -20,8 +20,8 @@
 <meta property="og:title" content="タグパレット｜実況のハッシュタグをワンタップで投稿画面へ">
 <meta property="og:description" content="SNSで実況するときなどに、よく使うハッシュタグや定型文をワンタップで呼び出せるコピペ用ツール。">
 <meta property="og:url" content="https://mbs-code.github.io/tag-palette/">
-<!-- 画像を変えたらファイル名の -v番号 を上げる（Twitter やブラウザが古い画像をキャッシュしているため） -->
-<meta property="og:image" content="https://mbs-code.github.io/tag-palette/ogp-v2.png">
+<!-- 画像を変えたら ?v= の番号を上げる（Twitter やブラウザが古い画像をキャッシュしているため）。アプリ内の画像にも同じ番号が付く -->
+<meta property="og:image" content="https://mbs-code.github.io/tag-palette/ogp.png?v=5">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="タグパレット：パレットの「#番組名 #実況タグ」をタップすると、Twitterの投稿画面にそのまま入る">
@@ -860,6 +860,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   ];
   // 使い方の下に1行あけて添える一文
   const TIPS_FOOT = 'ホーム画面に|追加すれば、|<b>アプリ</b>としても|利用可能です。|手順は|右上の<b class="sym">⚙</b>から。';
+  // OGP 画像の ?v=…（画像を変えたときだけ上げる）。<meta property="og:image"> の1か所で管理し、一覧の画像にも同じものを付ける
+  const OGP_V = (() => { try { return new URL(document.querySelector('meta[property="og:image"]').content).search; } catch { return ''; } })();
   const phrases = (html) => html.split('|').map(x => `<span class="ph">${x}</span>`).join('');
   const tipIcon = (t) => t.ico
     ? `<span class="tip-ico" aria-hidden="true"><svg viewBox="0 0 24 24">${ICONS[t.ico] || ''}</svg></span>`
@@ -878,7 +880,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   function renderTips(list) {
     if (state.settings.aboutTips) {
       list.appendChild(tipCard('aboutTips', 'タグパレットとは', `
-        <img class="tip-ogp" src="ogp-v2.png" alt="パレットをタップすると、Twitterの投稿画面にそのまま入る様子" width="1200" height="630">
+        <img class="tip-ogp" src="ogp.png${OGP_V}" alt="パレットをタップすると、Twitterの投稿画面にそのまま入る様子" width="1200" height="630">
         <div class="tip-lead">${ABOUT_LEAD.map(l => `<p>${phrases(l)}</p>`).join('')}</div>`));
     }
     if (state.settings.tips) {

@@ -1,7 +1,7 @@
 // バージョン（キャッシュ名）は version.js で管理する。画面の表示と共通
 importScripts('./version.js');
 const CACHE = self.APP_CACHE;   // 例：tag-palette-rev37
-const FILES = ['./', './index.html', './version.js', './manifest.json', './sw.js', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './ogp-v2.png'];
+const FILES = ['./', './index.html', './version.js', './manifest.json', './sw.js', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './ogp.png'];
 
 self.addEventListener('install', (e) => {
   // ブラウザのHTTPキャッシュを通さず、必ずサーバーから最新を取る

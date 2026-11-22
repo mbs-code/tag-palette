@@ -190,8 +190,8 @@ header .grow { flex: 1; }
   background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
 }
 .genre-select[aria-expanded="true"], .genre-select:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
-/* ヘッダーのボタンの枠は薄いグレー。並べ方はグレーベース、グループ・設定は青ベース */
-header { --hbtn-line: color-mix(in srgb, var(--sub) 30%, var(--line)); --hbtn-text: color-mix(in srgb, var(--text) 35%, var(--sub)); }
+/* ヘッダーのボタンの枠はカードの枠と同じ色。並べ方はグレーベース、グループ・設定は青ベース */
+header { --hbtn-line: var(--line); --hbtn-text: color-mix(in srgb, var(--text) 35%, var(--sub)); }
 /* ヘッダーの並べ方の切り替え：押すたびに グループ順 ⇄ 利用順 */
 .view-toggle { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 38px; padding: 0 11px;
   border: 1px solid var(--hbtn-line); border-radius: 12px;
@@ -200,6 +200,12 @@ header { --hbtn-line: color-mix(in srgb, var(--sub) 30%, var(--line)); --hbtn-te
 /* 利用順：並べ替えの ≡ は出さない（見出しは 直近・今日・今週・今月・それ以前・未使用） */
 #list.recent .row .handle { display: none; }
 #list.recent .row .body { padding-right: 14px; }
+/* 利用順：カードの上に、左にグループ名・右に最後に使った日時 */
+.row .meta { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 6px;
+  font-size: 12px; line-height: 1.5; color: var(--sub); white-space: nowrap; }
+.row .meta .m-genre { overflow: hidden; text-overflow: ellipsis; }
+.row .meta .g-dot { width: 9px; height: 9px; margin-right: 6px; vertical-align: -0.5px; }
+.row .meta .m-used { flex: none; font-variant-numeric: tabular-nums; }
 .icon-btn { flex: none; border: 1px solid var(--hbtn-line); border-radius: 12px; width: 38px; height: 38px;
   display: grid; place-items: center; background: var(--chip); color: var(--accent); }
 /* 編集モード：ボタンを塗りつぶしに */
@@ -240,12 +246,16 @@ input[type=text]:disabled { opacity: .5; color: var(--sub); }
 .foot-hint.warn-note { color: var(--danger); }
 /* 追加・編集画面の一番下：作成日・更新日 */
 /* 見出し「更新日」の横に、もっと薄い灰色で日時 */
+.section-title.tight { margin-top: 2px; }
+/* 見出し（更新日・最終利用・利用回数）の幅をそろえて、右の日時の頭を縦にそろえる */
+.date-key { display: inline-block; min-width: 4em; }
 .card-date { margin-left: 10px; font-weight: 400; color: var(--sub); opacity: .65; font-variant-numeric: tabular-nums; }
 .tw-tip { margin: 0 0 4px; }
 .tw-tip .tip-head { margin-bottom: 4px; }
 .share-src { font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 30vh; overflow: auto; }
 .head-spacer { visibility: hidden; pointer-events: none; }
 .hint { font-size: 12px; color: var(--sub); margin-top: 6px; line-height: 1.6; }
+.hint a { color: var(--accent); word-break: break-all; }
 .foot-hint { font-size: 12px; color: var(--sub); margin: 6px 4px 0; line-height: 1.6; }
 
 /* ---------- 一覧 ---------- */
@@ -359,6 +369,13 @@ select.plain, .combo input, .select-btn {
 
 /* グループ入力：見た目はセレクト、入力で候補を絞り込み */
 .combo { position: relative; }
+/* パレットの編集：グループを選んでいるときは、右にグループの編集ボタン */
+.genre-row { display: flex; gap: 8px; align-items: stretch; }
+.genre-row .combo { flex: 1; min-width: 0; }
+.field-btn { flex: none; width: 46px; display: grid; place-items: center; padding: 0;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--field); color: var(--accent); cursor: pointer; }
+.field-btn[hidden] { display: none; }
+.field-btn .ic { width: 20px; height: 20px; }
 /* セレクトの代わりのボタン（押すとポップアップで選ぶ） */
 .select-btn { display: block; text-align: left; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .select-btn.placeholder { color: var(--sub); }
@@ -501,9 +518,12 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   <div class="section-title">グループ</div>
   <div class="group">
     <div class="item">
-      <div class="combo">
-        <input type="hidden" id="fGenre">
-        <button type="button" class="select-btn" id="fGenreBtn" aria-label="グループ"></button>
+      <div class="genre-row">
+        <div class="combo">
+          <input type="hidden" id="fGenre">
+          <button type="button" class="select-btn" id="fGenreBtn" aria-label="グループ"></button>
+        </div>
+        <button type="button" class="field-btn" id="fGenreEdit" aria-label="このグループを編集" title="このグループを編集" hidden><span class="ic" data-ic="groupEdit"></span></button>
       </div>
     </div>
   </div>
@@ -524,7 +544,9 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
       <button type="button" id="cardDelete" class="list-btn chev danger"><span class="ico ic" data-ic="trash"></span>
         <span class="lbl">このパレットを削除</span></button>
     </div>
-    <div class="section-title">更新日<span class="card-date" id="cardUpdated"></span></div>
+    <div class="section-title"><span class="date-key">更新日</span><span class="card-date" id="cardUpdated"></span></div>
+    <div class="section-title tight"><span class="date-key">最終利用</span><span class="card-date" id="cardUsed"></span></div>
+    <div class="section-title tight"><span class="date-key">利用回数</span><span class="card-date" id="cardUses"></span></div>
   </div>
   </div>
 </dialog>
@@ -599,13 +621,14 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
 <dialog id="colorDlg">
   <div class="sheet-head">
     <button type="button" id="colorCancel" class="text-btn">キャンセル</button>
-    <h2><span class="ic" data-ic="folder"></span>グループの編集</h2>
+    <h2><span class="ic" data-ic="layers"></span>グループの編集</h2>
     <button type="button" id="colorSave" class="pill-btn">保存</button>
   </div>
   <div class="sheet-body">
-  <div class="section-title first">名前</div>
+  <div class="section-title first">グループ名</div>
   <div class="group"><div class="item">
     <input type="text" id="groupName" autocomplete="off" autocapitalize="off" placeholder="グループ名">
+    <div class="hint" id="groupNameHint"></div>
   </div></div>
   <div class="err" id="groupNameErr"></div>
   <div class="section-title">色</div>
@@ -653,6 +676,14 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   <div class="section-title">全般</div>
   <div class="group">
     <div class="item">
+      <div class="name name-row"><span class="ic" data-ic="theme"></span>テーマ</div>
+      <select class="plain" id="themeSelect" aria-label="テーマ">
+        <option value="auto">自動（端末の設定に合わせる）</option>
+        <option value="light">ライト</option>
+        <option value="dark">ダーク</option>
+      </select>
+    </div>
+    <div class="item">
       <div class="name name-row"><span class="ic" data-ic="tap"></span>タップしたときの動作</div>
       <select class="plain" id="tapAction" aria-label="タップしたときの動作">
         <option value="twitter">Twitterを開く</option>
@@ -660,14 +691,6 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
         <option value="edit">編集画面を開く</option>
       </select>
       <div class="hint" id="tapHint"></div>
-    </div>
-    <div class="item">
-      <div class="name name-row"><span class="ic" data-ic="theme"></span>テーマ</div>
-      <select class="plain" id="themeSelect" aria-label="テーマ">
-        <option value="auto">自動（端末の設定に合わせる）</option>
-        <option value="light">ライト</option>
-        <option value="dark">ダーク</option>
-      </select>
     </div>
     <div class="item">
       <div class="name name-row"><span class="ic" data-ic="quote"></span>ツイートの取得先</div>
@@ -883,13 +906,20 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     a.target = '_blank'; a.rel = 'noopener noreferrer';
     document.body.appendChild(a); a.click(); a.remove();
   }
-  // 使った記録（タップしたとき）。今は画面に出さず、データとしてだけ持つ
+  // 使った記録（タップしたとき）。利用順のカード上部と編集画面に出す
   function recordUse(id) {
     const it = state.items.find(i => i.id === id);
     if (!it) return;
     it.used = new Date().toISOString();
     it.uses = (it.uses || 0) + 1;
     save();
+    // 並び順はその場では変えず（押した直後にカードが動かないように）、表示している日時と回数だけ新しくする
+    const m = document.querySelector(`#list .row[data-id="${CSS.escape(id)}"] .m-used`);
+    if (m) m.textContent = shortUsed(it.used);
+    if (editingIndex >= 0 && state.items[editingIndex] === it) {
+      $('cardUsed').textContent = fmtDate(it.used, '未使用');
+      $('cardUses').textContent = `${it.uses}回`;
+    }
   }
   // twitter / copy はすぐ実行。edit は編集画面を開く（Twitterを開く・コピーもそこからできる。使った記録は実行したときだけ）
   function onTap(item) {
@@ -992,15 +1022,14 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     if (state.settings.viewMode === 'recent') {
       const t = (i) => i.used ? Date.parse(i.used) : -Infinity;
       const items = state.items.map((it, k) => [it, k]).sort((a, b) => (t(b[0]) - t(a[0])) || (a[1] - b[1])).map(([it]) => it);
-      // 直近（1時間以内）/ 今日 / 今週（月曜はじまり）/ 今月 / それ以前 / 未使用 に分けて見出しを付ける
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const week = today - ((now.getDay() + 6) % 7) * 86400000;
-      const month = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      // 直近（1時間以内）/ 今日（24時間以内）/ 今週（7日以内）/ 今月（30日以内）/ それ以前 / 未使用 に分けて見出しを付ける。
+      // 日付の区切りで分けると、日付が変わる直前に使ったものがすぐ「昨日」扱いになるので、今からの時間で分ける
+      const now = Date.now(), H = 3600000;
+      const today = now - 24 * H, week = now - 7 * 24 * H, month = now - 30 * 24 * H;
       const bucket = (i) => {
         const u = t(i);
         if (u === -Infinity) return '未使用';
-        if (u >= now.getTime() - 3600000) return '直近';
+        if (u >= now - H) return '直近';
         if (u >= today) return '今日';
         if (u >= week) return '今週';
         if (u >= month) return '今月';
@@ -1052,13 +1081,22 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     if (groupColor(item.genre)) el.style.setProperty('--gc', groupColor(item.genre));
     el.dataset.id = item.id;
     if (item.disabled) el.setAttribute('aria-disabled', 'true');
-    el.innerHTML = `<div class="body">${highlight(item.text)}</div>
+    const meta = state.settings.viewMode === 'recent'
+      ? `<div class="meta"><span class="m-genre">${groupDot(item.genre)}${esc(genreLabel(item.genre))}</span><span class="m-used">${shortUsed(item.used)}</span></div>`
+      : '';
+    el.innerHTML = `<div class="body">${meta}${highlight(item.text)}</div>
       <div class="handle" aria-label="ドラッグで並べ替え">≡</div>`;
     setupRow(el, item);
     setupDrag(el.querySelector('.handle'), el);
     return el;
   }
   const indexOfId = (id) => state.items.findIndex(i => i.id === id);
+  // カード上部の最終利用：「11/21 14:03・3時間前」。使っていなければ「未使用」
+  function shortUsed(iso) {
+    if (!iso) return '未使用';
+    const d = new Date(iso), p = (n) => String(n).padStart(2, '0');
+    return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}・${ago(d)}`;
+  }
 
   // ---------- タップ / 長押し ----------
   // 押していた時間で「タップ」か「長押し」かを決める。
@@ -1257,9 +1295,9 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     d.addEventListener('cancel', (e) => { e.preventDefault(); closeDlg(d); });
   }
 
-  // 「2026/11/21(土) 14:03:25・3時間前」の形。記録が無い（以前に作ったパレット）ときは「記録なし」
-  function fmtDate(iso) {
-    if (!iso) return '記録なし';
+  // 「2026/11/21(土) 14:03:25・3時間前」の形。記録が無い（以前に作ったパレット）ときは「記録なし」（最終利用は「未使用」）
+  function fmtDate(iso, none = '記録なし') {
+    if (!iso) return none;
     const d = new Date(iso), p = (n) => String(n).padStart(2, '0');
     const wd = '日月火水木金土'[d.getDay()];
     return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())}(${wd}) ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}・${ago(d)}`;
@@ -1285,7 +1323,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     const item = i >= 0 ? state.items[i] : null;
     const g = currentGenre();
     $('cardDlgTitle').textContent = item ? 'パレットを編集' : 'パレットを追加';
-    setIcon($('cardDlgIcon'), item ? 'edit' : 'add');
+    setIcon($('cardDlgIcon'), item ? 'palette' : 'add');
     $('fText').value = item ? item.text : '';
     // 新規は、いま表示しているグループを最初から入れておく
     setGenreField(item ? item.genre : (g === ALL ? '' : g));
@@ -1294,6 +1332,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     $('cardEnabled').checked = !(item && item.disabled);
     syncCardEnabled();
     $('cardUpdated').textContent = fmtDate(item && item.updated);
+    $('cardUsed').textContent = fmtDate(item && item.used, '未使用');
+    $('cardUses').textContent = `${(item && item.uses) || 0}回`;
     openDlg($('cardDlg'));
     updatePreview();
     focusText();
@@ -1394,7 +1434,10 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     $('fGenre').value = v;
     $('fGenreBtn').innerHTML = groupDot(v) + `<span>${esc(v || '未分類')}</span>`;
     $('fGenreBtn').classList.toggle('placeholder', !v);
+    // すでにあるグループを選んでいるときだけ編集ボタンを出す（未分類・まだ保存していない新しい名前では出さない）
+    $('fGenreEdit').hidden = !(v && groupOrder().includes(v));
   }
+  $('fGenreEdit').addEventListener('click', () => { const v = $('fGenre').value; if (v) openGroupEdit(v); });
   $('fGenreBtn').addEventListener('click', () => {
     openPicker($('fGenreBtn'), {
       allowNew: true, value: $('fGenre').value,
@@ -1512,13 +1555,14 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
   }
   $('tapAction').addEventListener('change', (e) => { state.settings.tapAction = e.target.value; save(); syncTapAction(); });
   // ツイートの取得先（公式 / 非公式）
+  const hintLink = (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`;
   const TW_SOURCE_HINTS = {
-    official: 'https://publish.twitter.com/oembed',
-    fx: 'https://api.fxtwitter.com'
+    official: `${hintLink('https://docs.x.com/x-for-websites/oembed-api')} を利用します。長いツイートは文字数で途中までしか取得できません。`,
+    fx: `${hintLink('https://api.fxtwitter.com')}（${hintLink('https://docs.fxembed.com/')}）を利用します。`
   };
   function syncTweetSource() {
     $('tweetSource').value = state.settings.tweetSource; $('tweetSource')._sync?.();
-    $('tweetSourceHint').textContent = TW_SOURCE_HINTS[state.settings.tweetSource];
+    $('tweetSourceHint').innerHTML = TW_SOURCE_HINTS[state.settings.tweetSource];
   }
   $('tweetSource').addEventListener('change', (e) => { state.settings.tweetSource = e.target.value; save(); syncTweetSource(); });
   // ---------- グループ（並び替え・色） ----------
@@ -1588,6 +1632,11 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     $('groupName').value = isNone ? '' : colorTarget;
     $('groupName').placeholder = isNone ? '未分類' : 'グループ名';
     $('groupNameErr').textContent = '';
+    // グループ名・色は、そのグループのパレットすべてに反映される
+    const count = state.items.filter(i => i.genre === g).length;
+    $('groupNameHint').textContent = isNone
+      ? `名前を入れて保存すると、未分類のパレット${count}件すべてがこのグループに移ります。`
+      : `グループ名と色は、このグループのパレット${count}件すべてに反映されます。`;
     renderSwatches();
     $('groupDeleteSub').textContent = `中のパレット${state.items.filter(i => i.genre === g).length}件も削除します`;
     $('customColor').value = pickedColor || '#3b82f6';
@@ -1613,7 +1662,14 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     const g = colorTarget, n = state.items.filter(i => i.genre === g).length;
     if (!confirm(`「${genreLabel(g)}」と、その中のパレット${n}件を削除します。
 元に戻せません。よろしいですか？`)) return;
+    const editId = editingIndex >= 0 ? state.items[editingIndex].id : null;
     state.items = state.items.filter(i => i.genre !== g);
+    // パレットの編集画面から開いていたとき：編集中のパレットが消えたら編集画面も閉じる。残っていれば位置と選択中のグループを合わせ直す
+    if ($('cardDlg').open) {
+      if (editId != null) editingIndex = indexOfId(editId);
+      if (editId != null && editingIndex < 0) closeDlg($('cardDlg'));
+      else setGenreField($('fGenre').value === g ? '' : $('fGenre').value);
+    }
     state.settings.groupOrder = (state.settings.groupOrder || []).filter(x => x !== g);
     const colors = { ...(state.settings.groupColors || {}) }; delete colors[g];
     state.settings.groupColors = colors;
@@ -1646,6 +1702,8 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     if (!keepTargetColor) { if (pickedColor) colors[to] = pickedColor; else delete colors[to]; }
     state.settings.groupColors = colors;
     save(); render(); renderGroupList();
+    // パレットの編集画面で選んでいたグループなら、新しい名前・色に合わせる
+    if ($('cardDlg').open) setGenreField($('fGenre').value === from ? to : $('fGenre').value);
     closeDlg($('colorDlg'));
     toast('保存しました', 'ok');
   });
@@ -1755,7 +1813,12 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
     // 半分塗りの丸（ライト/ダーク）
     theme: '<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2.2v15.6a7.8 7.8 0 0 0 0-15.6z"/>',
     // フォルダ
+    // パレット（絵の具の穴が4つ・右下に親指を通すくぼみ）
+    palette: '<path fill-rule="evenodd" d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.2-.64-1.67-.08-.1-.13-.21-.13-.33 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9zm-5.5 11c-.83 0-1.5-.67-1.5-1.5S5.67 10 6.5 10 8 10.67 8 11.5 7.33 13 6.5 13zm3-4C8.67 9 8 8.33 8 7.5S8.67 6 9.5 6s1.5.67 1.5 1.5S10.33 9 9.5 9zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 6 14.5 6s1.5.67 1.5 1.5S15.33 9 14.5 9zm3 4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>',
     folder: '<path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h3.6a2 2 0 0 1 1.4.6L12.3 6.4h6.2A2.5 2.5 0 0 1 21 8.9v8.6a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/>',
+    // グループの編集：ヘッダーのグループのアイコン（layers）を小さく薄くして、右下に大きな鉛筆を目立たせる。
+    // 鉛筆のふちをボタンの背景色で太く描いて、重なったところにすき間を作る
+    groupEdit: '<g transform="translate(.5 .5) scale(.74)" opacity=".55"><path d="M12 2.6a1.6 1.6 0 0 1 .8.2l8.4 4.6a1 1 0 0 1 0 1.8l-8.4 4.6a1.6 1.6 0 0 1-1.6 0L2.8 9.2a1 1 0 0 1 0-1.8l8.4-4.6a1.6 1.6 0 0 1 .8-.2z"/><path d="M3.9 11.6 11.2 15.6a1.6 1.6 0 0 0 1.6 0l7.3-4 1.1.6a1 1 0 0 1 0 1.8l-8.4 4.6a1.6 1.6 0 0 1-1.6 0L2.8 14a1 1 0 0 1 0-1.8z" opacity=".75"/><path d="M3.9 16.4 11.2 20.4a1.6 1.6 0 0 0 1.6 0l7.3-4 1.1.6a1 1 0 0 1 0 1.8l-8.4 4.6a1.6 1.6 0 0 1-1.6 0l-8.4-4.6a1 1 0 0 1 0-1.8z" opacity=".5"/></g><path transform="translate(8.1 8.85) scale(.7)" stroke-width="3.6" stroke-linejoin="round" paint-order="stroke" style="stroke:var(--field)" d="M16.2 3.4a2.3 2.3 0 0 1 3.3 0l1.1 1.1a2.3 2.3 0 0 1 0 3.3L9.4 19 3.5 20.5 5 14.6z"/>',
     // # （タグ）
     hash: '<path d="M10 3.5 8 20.5M16 3.5l-2 17M4.5 8.8h16M3.5 15.2h16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
     // 受け取る（トレイに矢印）
